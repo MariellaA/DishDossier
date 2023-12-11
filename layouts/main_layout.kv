@@ -1,0 +1,144 @@
+<RecipeItem>:
+    #recipe_img: ImageLeftWidget
+    size_hint_y: None
+    height: dp(200)
+
+    ImageLeftWidget:
+        id: recipe_img
+
+
+<DishDossierController>
+    orientation: 'horizontal'
+    #spacing:10
+
+    MDBoxLayout:
+        size: root.width, root.height
+
+
+        ######## SIDEBAR #########
+        MDBoxLayout:
+            orientation: 'vertical'
+            size_hint_x: None  # Fixed width
+            width: 200
+            #background_color: app.theme_cls.primary_color
+
+            MDLabel:
+                text: "Dish Dossier"
+                text_color: (1, 0, 0, 1)
+                padding: dp(10)
+                size_hint_y: None
+                #height: 200
+
+            MDBoxLayout:
+                orientation: "vertical"
+                spacing: 10
+
+
+                MDNavigationRail:
+                    id: nav_rail
+                    size_hint_x: None
+                    width: 200
+
+                    md_bg_color: app.theme_cls.primary_color  # Set background color
+                    #specific_text_color: "#e7e4c0"
+
+                    anchor: 'center'
+                    ripple_color_item: [0.2, 0.2, 0.2, 0.1]
+                    #on_action: root.on_navigation_item_select(args[0])
+
+                    # Reels
+                    MDNavigationRailItem:
+                        text: 'Feeds'
+                        icon: 'rss'
+                        font_name: "nasalization-rg.ttf"
+                        #on_release: root.app,transition_to('reels')
+
+                    # My Recipes
+                    MDNavigationRailItem:
+                        text: 'My Recipes'
+                        icon: 'bookshelf'
+                        font_name: "nasalization-rg.ttf"
+                        #on_release: app.root.transition_to('my_recipes')
+
+                    # Favourites
+                    MDNavigationRailItem:
+                        text: 'Favourites'
+                        icon: 'notebook-heart-outline'
+                        font_name: "nasalization-rg.ttf"
+                        padding_top: dp(8)
+                        #on_release: app.root.transition_to('favourites')
+
+
+                    # Separator
+                    MDSeparator:
+                        background_color: "#eeeeee"
+                        height: dp(8)
+
+                    # Meal Planner
+                    MDNavigationRailItem:
+                        text: 'Meal Planner'
+                        icon: 'calendar-multiselect'
+                        font_name: "nasalization-rg.ttf"
+                        #on_release: app.root.transition_to('meal_planner')
+
+            # Small Footer
+            MDBoxLayout:
+                orientation: 'vertical'
+                size_hint_y: None
+                height: 100
+                #md_bg_color: app.theme_cls.primary_color
+                canvas.before:
+                    Color:
+                        rgba: (1, 1, 1, 1)
+                    Rectangle:
+                        size: self.size
+                        pos: self.pos
+
+                #MDSwitch:
+                 #   id: switch_mode
+                  #  pos_hint: {"center_x": .45}
+                   # widget_style: "ios"
+                    # on_release: root.switch_theme_style()
+
+                MDLabel:
+                    text: 'Footer'
+                ######### END SIDEBAR #########
+
+        ######### RECIPE LIST #########
+        MDBoxLayout:
+            #id: recipe_box
+            orientation: 'vertical'
+            size_hint: 0.3, 1
+            canvas.before:
+                Color:
+                    rgba: (1, 0.4, 0.4, 1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+
+            MDLabel:
+                text: "Search Bar"
+                text_color: (1, 0, 0, 1)
+                padding: dp(10)
+                size_hint_y: None
+                height: 200
+                canvas.before:
+                    Color:
+                        rgba: (1, 1, 1, 0.5)
+                    Rectangle:
+                        size: self.size
+                        pos: self.pos
+
+            MDScrollView:
+                padding: 30
+
+                RecipeList:
+                    id: recipe_list
+
+
+        MDBoxLayout:
+            Label:
+                text: 'LABEL'
+
+            Label:
+                text: 'LABEL'
