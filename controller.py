@@ -9,6 +9,8 @@ from kivymd.uix.list import OneLineAvatarListItem, MDList, OneLineListItem, OneL
 from kivymd.uix.navigationrail import MDNavigationRail, MDNavigationRailItem
 from kivymd.uix.boxlayout import MDBoxLayout
 
+from Recipe import Recipe
+
 Builder.load_file('layouts/main_layout.kv')
 
 
@@ -24,13 +26,14 @@ class RecipeItem(OneLineAvatarListItem):
 
 
 class DishDossierController(BoxLayout):
-    def __init__(self, app, model, **kwargs):
+    def __init__(self, app, model, api_handler, **kwargs):
         super(BoxLayout, self).__init__(**kwargs)
         self.app = app
         self.model = model
+        self.api_handler = api_handler
 
         # self.recipe_list = RecipeList()
-        self.load_recipe_list()
+        self.load_recipe_list_with_recipes()
 
         # self.model.load_recipes_from_api()  # Load recipes when the app starts
 
@@ -38,52 +41,37 @@ class DishDossierController(BoxLayout):
         # self.sidebar = MDNavigationRail(id='nav_rail')
         # self.recipe_list = MDBoxLayout(orientation='vertical', spacing=10)
         # self.recipe_details = MDBoxLayout(orientation='vertical', spacing=10)
-        #
-        # self._build_sidebar()
-        # self._build_recipe_list()
-        # self._build_recipe_details()
 
-    # def _build_sidebar(self):
-    #     # Add your logo and other sidebar components here
-    #     #logo = Image(source='path/to/your/logo.png', size=(dp(48), dp(48)))
-    #
-    #     # self.sidebar.add_widget(logo)
-    #
-    #     # Add navigation items (buttons) to the sidebar
-    #     for recipe in self.model.recipes:
-    #         self.ids.recipe_box.add_widget(MDNavigationRailItem(text=recipe['title'], icon='food'))
-    #
-    #     # Add a footer to the sidebar
-    #     #self.sidebar.add_widget(OneLineAvatarListItem(text='Footer'))
-    #
-    #     #self.add_widget(self.sidebar)
+    def load_random_recipe(self):
+        recipes = self.api_handler.load_random_recipe_from_api()
 
-    def load_recipe_list(self):
+        for recipe in recipes:
+            data = {"id": recipe["id"], "title": recipe["title"],
+                    "prep_time": recipe["preparationMinutes"],
+                    "cooking_time": recipe["cookingMinutes"],
+                    "ready_in_time": recipe["readyInMinutes"],
+                    "servings": recipe["servings"],
+                    "image": "img_1.png",  # recipe["image"] if recipe["image"] else
+                    "instructions": recipe["instructions"]}
+
+            self.model.recipes.append(Recipe(**data))
+            print(self.recipe)
+
+    def load_recipe_list_with_recipes(self):
         self.ids.recipe_list.clear_widgets()
 
-        # available_height = self.ids.recipe_list.height
-        # item_height = dp(100)
-
-        i = -1
         for recipe in self.model.recipes:
-            # if available_height >= item_height:
-            # for n in range(10):
-            i += 1
             # item = RecipeItem(text=f'title {i}', size_hint_y=None, height=item_height)
             item = RecipeItem(text=recipe['title'], size_hint_y=None, height=300)
-            # RecipeItem.img = ""
+
             # print(recipe['title'])
             # print(recipe['image'])
-            # item.bind(on_release=self.on_recipe_select)
-            self.ids.recipe_list.add_widget(item)
+            item.bind(on_release=self.on_recipe_select)
             item.ids.recipe_img.source = recipe['image']  # "img_1.png"
+            self.ids.recipe_list.add_widget(item)
             # print(item.ids.recipe_img.source)
             # print(item.ids)
             # print(self.ids)
-
-            # print(available_height)
-            # else:
-            #     break
 
     def on_recipe_select(self, instance):
         print("select")
