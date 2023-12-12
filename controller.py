@@ -32,49 +32,71 @@ class DishDossierController(BoxLayout):
         self.model = model
         self.api_handler = api_handler
 
-        # self.recipe_list = RecipeList()
-        self.load_recipe_list_with_recipes()
-
-        # self.model.load_recipes_from_api()  # Load recipes when the app starts
-
-        # Initialize UI components
-        # self.sidebar = MDNavigationRail(id='nav_rail')
-        # self.recipe_list = MDBoxLayout(orientation='vertical', spacing=10)
-        # self.recipe_details = MDBoxLayout(orientation='vertical', spacing=10)
+        self.selected_recipe_list = 'all_recipes'
+        self.load_recipe_list_with_recipes(self.model.all_recipes)
 
     def load_random_recipe(self):
         recipes = self.api_handler.load_random_recipe_from_api()
 
         for recipe in recipes:
-            data = {"id": recipe["id"], "title": recipe["title"],
-                    "prep_time": recipe["preparationMinutes"],
-                    "cooking_time": recipe["cookingMinutes"],
-                    "ready_in_time": recipe["readyInMinutes"],
-                    "servings": recipe["servings"],
-                    "image": "img_1.png",  # recipe["image"] if recipe["image"] else
-                    "instructions": recipe["instructions"]}
-
-            self.model.recipes.append(Recipe(**data))
+            # data = {"id": recipe["id"], "title": recipe["title"],
+            #         "prep_time": recipe["preparationMinutes"],
+            #         "cooking_time": recipe["cookingMinutes"],
+            #         "ready_in_time": recipe["readyInMinutes"],
+            #         "servings": recipe["servings"],
+            #         "image": "img_1.png",  # recipe["image"] if recipe["image"] else
+            #         "instructions": recipe["instructions"]}
+            print("Load random recipe")
+            print(**recipe)
+            print(recipe)
+            rec = Recipe(recipe)
+            self.model.recipes.append(rec)
+            print(rec.title)
             print(self.recipe)
 
-    def load_recipe_list_with_recipes(self):
+    def load_recipe_list_with_recipes(self, recipe_list):
         self.ids.recipe_list.clear_widgets()
 
-        for recipe in self.model.recipes:
+        for recipe in recipe_list:
             # item = RecipeItem(text=f'title {i}', size_hint_y=None, height=item_height)
-            item = RecipeItem(text=recipe['title'], size_hint_y=None, height=300)
-
-            # print(recipe['title'])
-            # print(recipe['image'])
+            # item = RecipeItem(id=recipe['id']), text=recipe['title'], size_hint_y=None, height=300)
+            item = RecipeItem(id=recipe.id, text=recipe.title, size_hint_y=None, height=300)
+            # item.bind(on_release=lambda rid=recipe['id']: self.on_recipe_select(rid))
             item.bind(on_release=self.on_recipe_select)
-            item.ids.recipe_img.source = recipe['image']  # "img_1.png"
+            item.ids.recipe_img.source =  recipe.image  # recipe['image']  # "img_1.png"
             self.ids.recipe_list.add_widget(item)
             # print(item.ids.recipe_img.source)
             # print(item.ids)
             # print(self.ids)
 
     def on_recipe_select(self, instance):
+        print(instance.id)
+        recipe = self.model.search_for_recipe(instance.id)
+        self.ids.recipe_title.text = recipe.title.upper()
+        self.ids.recipe_prep_time.text = f"Prep. time: {recipe.prep_time if recipe.prep_time != '-1' else 'N/A'}"
+        self.ids.recipe_cook_time.text = f"Cook time: {recipe.cooking_time if recipe.cooking_time != '-1' else 'N/A'}"
+        self.ids.recipe_total_time.text = f"Total time: {recipe.total_time if recipe.total_time != '-1' else 'N/A'}"
+        self.ids.recipe_servings.text = f"Servings {recipe.servings if recipe.servings != '-1' else 'N/A'}"
+        # self.ids.recipe_descr.text = recipe.description
+        self.ids.recipe_instr.text = f"Instructions:\n{recipe.instructions}"
+        # print(recipe['title'])
         print("select")
+
+    def on_sidebar_select(self, list):
+        ### The 'All Recipes' button gets pressed on initialization
+        if list != self.selected_recipe_list:
+            if list == "all_recipes":
+                self.load_recipe_list_with_recipes(self.model.all_recipes)
+            elif list == "my_recipes":
+                self.load_recipe_list_with_recipes(self.model.my_recipes)
+            elif list == "favorites":
+                self.load_recipe_list_with_recipes(self.model.favorites)
+
+            self.selected_recipe_list = list
+            print("sidebar")
+        print(list)
+
+
 
     # def _build_recipe_list(self):
     #     # Build the left column for the list of recipes
