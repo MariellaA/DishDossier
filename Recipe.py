@@ -9,4 +9,6 @@ class Recipe:
         self.servings = str(info.get('servings', None))
         self.image = info.get('image', None)
         self.instructions = info.get('instructions', None)
+        self.favourite = False
+        self.extendedIngredients = info.get('extendedIngredients', None)
 
