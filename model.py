@@ -1,14 +1,8 @@
-import certifi
 from kivy.event import EventDispatcher
-from kivy.properties import ListProperty
-import requests
-
-from Recipe import Recipe
+from recipe import Recipe
 
 
 class DishDossierModel(EventDispatcher):
-    recipes = ListProperty([])
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.all_recipes = [
@@ -1027,8 +1021,7 @@ class DishDossierModel(EventDispatcher):
                          'ingredients': [], 'equipment': []}]}], 'originalId': None,
                     'spoonacularScore': 91.26874542236328,
                     'spoonacularSourceUrl': 'https://spoonacular.com/mango-salsa-716290'})]
-        # self.all_recipes = []
-        self.my_recipes = []
+
         self.favourites = [
             Recipe({'favourite': True, 'id': 656701, 'title': '1 MIMI', 'prep_time': -1, 'cooking_time': -1, 'ready_in_time': 45,
                     'servings': 4, 'image': 'img_1.png',
@@ -1129,8 +1122,10 @@ class DishDossierModel(EventDispatcher):
                     'spoonacularSourceUrl': 'https://spoonacular.com/guf-danish-ice-cream-topping-631781'}),
 
         ]
-        # self.favourites = []
 
+        # self.all_recipes = []
+        self.my_recipes = []
+        # self.favourites = []
         self.categories = []
 
     def search_for_recipe(self, by, l):
@@ -1141,20 +1136,21 @@ class DishDossierModel(EventDispatcher):
             elif l == 'my_recipes':
                 recipe = list(filter(lambda r: r.id == by or by.lower() in r.title.lower(), self.my_recipes))
             elif l == 'favourites':
-                print("favs")
+                # print("favs")
                 recipe = list(filter(lambda r: r.id == by or by.lower() in r.title.lower(), self.favourites))
-            #     print(recipe)
-            # else:
-            #     # TODO: This is redundant when there are no repetitive recipes in the lists so its just temporary
-            #     recipe = list(filter(lambda r: r.id == by, self.all_recipes))
 
             return recipe
         except StopIteration:
             pass
 
+    def add_recipe(self, recipe):
+        self.all_recipes.append(recipe)
 
-        # self.load_recipes_from_api()
-        # self.load_initial_recipes()
+    def get_all_recipes(self):
+        return self.all_recipes
 
-    # def load_initial_recipes(self):
-    #     self.recipes.extend(["M", "b", "c", "d", "e", "f", "g", "h"])
+    def get_my_recipes(self):
+        return self.my_recipes
+
+    def get_favourite_recipes(self):
+        return self.favourites

@@ -1,7 +1,7 @@
 <RecipeItem>:
     #recipe_img: ImageLeftWidget
     size_hint_y: None
-    height: dp(200)
+    height: dp(300)
 
     ImageLeftWidget:
         id: recipe_img
@@ -20,14 +20,240 @@
             size: separator.width, self.thickness
 
 
+<ScreenOne>:
+    name: 'screen_one'
+    #recipe_title: 'recipe_title'
+    #recipe_servings: 'recipe_servings'
+    #recipe_prep_time: 'recipe_prep_time'
 
-<DishDossierController>
+    MDGridLayout:
+        cols: 2
+        #padding: 20
+
+        MDScrollView:
+            #md_bg_color: app.theme_cls.primary_color
+            canvas.before:
+                Color:
+                    rgba: app.theme_cls.primary_color
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
+            MDBoxLayout:
+                padding: 30
+                orientation: 'vertical'
+
+                MDLabel:
+                    id: recipe_title
+                    size_hint: 1, 0.30
+                    font_size: "30dp"
+                    text: 'Title'
+
+                MDLabel:
+                    size_hint: 1, 0.1
+                    id: recipe_servings
+                    text: 'Servings'
+
+                MDGridLayout:
+                    cols: 3
+                    size_hint: 1, 0.1
+
+                    MDLabel:
+                        id: recipe_prep_time
+                        text: 'Prep time'
+
+                    MDLabel:
+                        id: recipe_cook_time
+                        text: 'Cook time'
+
+                    MDLabel:
+                        id: recipe_total_time
+                        text: 'Total time'
+
+                MDBoxLayout:
+                    orientation: 'vertical'
+                    size_hint: 1, 1
+
+                   # MDLabel:
+                    #    id: recipe_descr
+                     #   text: 'Description'
+
+
+                    MDLabel:
+                        id: recipe_instr
+                        text: "Instructions"
+                        size_hint_y: None
+                        height: self.texture_size[1]
+                        adaptive_height: True
+                        theme_text_color: "Secondary"
+                        padding: dp(10)
+
+
+        ######## Recipe Ingredients #########
+        MDBoxLayout:
+            orientation: 'vertical'
+
+            padding: 30
+            spacing: 70
+
+            MDSmartTile:
+                id: recipe_full_image
+                radius: 24
+                box_radius: [0, 0, 24, 24]
+                box_color: 0, 0, 0, .2
+                anchor: 'top'
+                pos_hint: {"center_x": .5, "top": 1}
+                size_hint: None, None
+                width: "400dp"
+                height: "300dp"
+                #scale: False
+                #size: "400dp", "360dp"
+
+                MDIconButton:
+                    id: favs_button
+                    icon: "heart-outline"
+                    theme_icon_color: "Custom"
+                    icon_color: 1, 0, 0, 1
+                    pos_hint: {"center_y": .5}
+                    on_release:
+                        self.icon = "heart" if self.icon == "heart-outline" else "heart-outline"
+                        root.ids.favs_label.text = "Added To Favourites" if self.icon == "heart" else "Add To Favourites"
+                        app.add_to_favourites() if self.icon == "heart" else app.remove_from_favourites()
+
+                MDLabel:
+                    id: favs_label
+                    text: "Add to Favourites"
+                    bold: True
+                    color: 1, 1, 1, 1
+
+            ScrollView:
+
+                MDLabel:
+                    id: recipe_ingr
+                    text: "Ingredients"
+                    size_hint: 0.5, .9
+                    #size_hint_y: None
+                    #height: self.texture_size[1]
+                    #adaptive_height: True
+                    theme_text_color: "Secondary"
+                    padding: dp(10)
+                    bold: True
+                    color: 1, 1, 1, 1
+
+
+
+<ScreenTwo>:
+    name: 'screen_two'
+
+    MDGridLayout:
+        cols: 2
+
+        MDScrollView:
+            canvas.before:
+                Color:
+                    rgba: app.theme_cls.primary_color
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
+            MDBoxLayout:
+                padding: 30
+                orientation: 'vertical'
+
+                MDLabel:
+                    id: recipe_title
+                    size_hint: 1, 0.30
+                    font_size: "30dp"
+                    text: 'Title'
+
+                MDLabel:
+                    size_hint: 1, 0.1
+                    id: recipe_servings
+                    text: 'Servings'
+
+                MDGridLayout:
+                    cols: 3
+                    size_hint: 1, 0.1
+
+                    MDLabel:
+                        id: recipe_prep_time
+                        text: 'Prep time'
+
+                    MDLabel:
+                        id: recipe_cook_time
+                        text: 'Cook time'
+
+                    MDLabel:
+                        id: recipe_total_time
+                        text: 'Total time'
+
+                MDBoxLayout:
+                    orientation: 'vertical'
+                    size_hint: 1, 1
+
+                   # MDLabel:
+                    #    id: recipe_descr
+                     #   text: 'Description'
+
+                    MDLabel:
+                        id: recipe_instr
+                        text: "Instructions"
+                        size_hint_y: None
+                        height: self.texture_size[1]
+                        adaptive_height: True
+                        theme_text_color: "Secondary"
+                        padding: dp(10)
+
+        MDBoxLayout:
+            orientation: 'vertical'
+
+            padding: 30
+            spacing: 10
+
+            Image:
+                id: recipe_full_image
+                #source: app.image_source
+                size_hint: None, None
+                width: "400dp"
+                height: "300dp"
+
+                BoxLayout:
+                    orientation: 'horizontal'
+                    size_hint_y: None
+                    height: dp(40)
+
+                    MDIconButton:
+                        icon: "camera"
+                        theme_text_color: "Custom"
+                        text_color: app.theme_cls.primary_color
+                        #on_release: app.select_image()
+
+                    MDIconButton:
+                        icon: "delete"
+                        theme_text_color: "Custom"
+                        text_color: app.theme_cls.primary_color
+                        #on_release: app.remove_image()
+
+            MDTextField:
+                id: recipe_ingr
+                hint_text: "Ingredients"
+                mode: "rectangle"
+                size_hint_y: None
+                height: dp(200)
+                multiline: True
+                #on_text_validate: app.handle_ingredients_input()
+
+    MDFlatButton:
+        text: "Next Screen"
+        #on_release: app.root.current = 'screen_two'
+
+
+DishDossierController:
     orientation: 'horizontal'
     #spacing:10
 
     MDBoxLayout:
         size: root.width, root.height
-
 
         ######## SIDEBAR #########
         MDBoxLayout:
@@ -58,22 +284,22 @@
 
                     anchor: 'center'
                     ripple_color_item: [0.2, 0.2, 0.2, 0.1]
-                    #on_action: root.on_navigation_item_select(args[0])
+                    #on_action: app.on_navigation_item_select(args[0])
 
                     # All Recipes
                     MDNavigationRailItem:
                         text: 'All Recipes'
                         icon: 'rss'
                         font_name: "nasalization-rg.ttf"
-                        on_release: root.on_recipe_list_select('all_recipes') #if self.state != 'Down'
-                        #on_release: root.app,transition_to('reels')
+                        on_release: app.on_recipe_list_select('all_recipes') #if self.state != 'Down'
+                        #on_release: app,transition_to('reels')
 
                     # My Recipes
                     MDNavigationRailItem:
                         text: 'My Recipes'
                         icon: 'bookshelf'
                         font_name: "nasalization-rg.ttf"
-                        on_release: root.on_recipe_list_select('my_recipes') #if self.state != 'Down'
+                        on_release: app.on_recipe_list_select('my_recipes') #if self.state != 'Down'
                         #on_release: app.root.transition_to('my_recipes')
 
                     # Favourites
@@ -82,7 +308,7 @@
                         icon: 'notebook-heart-outline'
                         font_name: "nasalization-rg.ttf"
                         padding_top: dp(8)
-                        on_release: root.on_recipe_list_select('favourites') #if self.state != 'Down'
+                        on_release: app.on_recipe_list_select('favourites') #if self.state != 'Down'
                         #on_release: app.root.transition_to('favourites')
 
 
@@ -90,157 +316,85 @@
                         text: 'Meal Planner'
                         icon: 'calendar-multiselect'
                         font_name: "nasalization-rg.ttf"
-                        on_press: root.on_recipe_list_select()  #root.transition_to('meal_planner')
+                        on_press: app.on_recipe_list_select()  #app.transition_to('meal_planner')
 
                 #MDSwitch:
                  #   id: switch_mode
                   #  pos_hint: {"center_x": .45}
                    # widget_style: "ios"
-                    # on_release: root.switch_theme_style()
+                    # on_release: app.switch_theme_style()
 
 
         ######### RECIPE LIST #########
         MDBoxLayout:
             #id: recipe_box
             orientation: 'vertical'
-            size_hint: 0.3, 1
+            size_hint: 0.4, 1
 
-
-            spacing: 50
+            spacing: 30
             padding: 30
 
-            ###### SIDE BAR ######
-            MDTextField:
-                id: search_text
-                hint_text: "Search"
-                mode: "round"
-                icon_right: "magnify"
-                icon_right_color_focus: "orange"
-                helper_text: "Search"
-                on_text_validate: root.handle_search(self.text)
-                #max_text_length: 15
-                #size_hint: 1, 0.1
-                #pos_hint: {"center_x": .5, "center_y": .5}
+            ###### SEARCH BAR ######
+            MDGridLayout:
+                cols: 2
+                size_hint: 1, 0.1
+                #valign: "middle"
+                spacing: 50
 
+                MDTextField:
+                    id: search_text
+                    hint_text: "Search"
+                    mode: "round"
+                    icon_right: "magnify"
+                    icon_right_color_focus: "orange"
+                    #helper_text: "Search"
+                    on_text_validate: app.handle_search(self.text)
+
+                    #max_text_length: 15
+                    #size_hint: 1, 0.1
+                    #size_hint_y: None
+                    #padding: 0, 0, 0, 0
+                    #pos_hint_y: {"center_y": .1}
+
+                MDIconButton:
+                    icon: "hamburger-plus"
+                    #anchor: "center"
+                    icon_size: "25sp"
+                    #size_hint: None, None
+                    #width: dp(34)
+                    #pos_hint: {"center_x": 0.5, "center_y": 0}
+                    on_release: app.switch_screen()
+
+
+            ###### Recipe List #######
             MDBoxLayout:
+                orientation: 'vertical'
+
                 MDScrollView:
+                    id:recipe_scroll
                     padding: 30
+                    on_scroll_stop: app.on_scroll_stop(self.scroll_y)
 
                     RecipeList:
                         id: recipe_list
 
+                MDFillRoundFlatButton:
+                    id: show_more_btn
+                    text: "Show more"
+                    opacity: 0
+                    pos_hint: {"center_x": .5}
+                    on_release: app.show_more_recipes()
+
 
         ######## Recipe Info ########
-        MDGridLayout:
-            cols: 2
-            #padding: 20
+        MDScreenManager:
+            id: screens
 
-            ScrollView:
-                #md_bg_color: app.theme_cls.primary_color
-                canvas.before:
-                    Color:
-                        rgba: app.theme_cls.primary_color
-                    Rectangle:
-                        pos: self.pos
-                        size: self.size
+            ScreenOne:
+                id: screen_one
+                #transition: NoTransition()
 
-                MDBoxLayout:
-                    padding: 30
-                    orientation: 'vertical'
+            ScreenTwo:
+                id: screen_two
+                #transition: NoTransition()
 
-                    MDLabel:
-                        id: recipe_title
-                        size_hint: 1, 0.30
-                        font_size: "30dp"
-                        text: 'Title'
-
-                    MDLabel:
-                        size_hint: 1, 0.1
-                        id: recipe_servings
-                        text: 'Servings'
-
-                    MDGridLayout:
-                        cols: 3
-                        size_hint: 1, 0.1
-
-                        MDLabel:
-                            id: recipe_prep_time
-                            text: 'Prep time'
-
-                        MDLabel:
-                            id: recipe_cook_time
-                            text: 'Cook time'
-
-                        MDLabel:
-                            id: recipe_total_time
-                            text: 'Total time'
-
-                    MDBoxLayout:
-                        orientation: 'vertical'
-                        size_hint: 1, 1
-
-                        MDLabel:
-                            id: recipe_descr
-                            text: 'Description'
-
-
-                        MDLabel:
-                            id: recipe_instr
-                            text: "Instructions"
-                            size_hint_y: None
-                            height: self.texture_size[1]
-                            adaptive_height: True
-                            theme_text_color: "Secondary"
-                            padding: dp(10)
-
-
-            ######## Recipe Ingredients #########
-            MDBoxLayout:
-                orientation: 'vertical'
-
-                padding: 30
-                spacing: 70
-
-                MDSmartTile:
-                    id: recipe_full_image
-                    radius: 24
-                    box_radius: [0, 0, 24, 24]
-                    box_color: 0, 0, 0, .2
-                    anchor: 'top'
-                    pos_hint: {"center_x": .5, "top": 1}
-                    size_hint: None, None
-                    width: "400dp"
-                    height: "300dp"
-                    #scale: False
-                    #size: "400dp", "360dp"
-
-                    MDIconButton:
-                        id: favs_button
-                        icon: "heart-outline"
-                        theme_icon_color: "Custom"
-                        icon_color: 1, 0, 0, 1
-                        pos_hint: {"center_y": .5}
-                        on_release:
-                            self.icon = "heart" if self.icon == "heart-outline" else "heart-outline"
-                            root.ids.favs_label.text = "Added To Favourites" if self.icon == "heart" else "Add To Favourites"
-                            root.add_to_favourites() if self.icon == "heart" else root.remove_from_favourites()
-
-                    MDLabel:
-                        id: favs_label
-                        text: "Add to Favourites"
-                        bold: True
-                        color: 1, 1, 1, 1
-
-                ScrollView:
-
-                    MDLabel:
-                        id: recipe_ingr
-                        text: "Ingredients"
-                        size_hint: 0.5, .9
-                        #size_hint_y: None
-                        #height: self.texture_size[1]
-                        #adaptive_height: True
-                        theme_text_color: "Secondary"
-                        padding: dp(10)
-                        bold: True
-                        color: 1, 1, 1, 1

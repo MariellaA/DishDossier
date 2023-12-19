@@ -14,7 +14,7 @@ class RecipeAPIHandler():
 
     def load_random_recipes_from_api(self):
         ### decide on how many random recipes are needed
-        querystring = {"number": "1"}
+        querystring = {"number": "2"}
 
         url = "https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/random"
 
