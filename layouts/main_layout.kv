@@ -117,8 +117,8 @@
                     pos_hint: {"center_y": .5}
                     on_release:
                         self.icon = "heart" if self.icon == "heart-outline" else "heart-outline"
-                        root.ids.favs_label.text = "Added To Favourites" if self.icon == "heart" else "Add To Favourites"
-                        app.add_to_favourites() if self.icon == "heart" else app.remove_from_favourites()
+                        root.ids.favs_label.text = "Remove from Favourites" if self.icon == "heart" else "Add To Favourites"
+                        app.add_or_remove_from_favourites() # if self.icon == "heart" else app.remove_from_favourites()
 
                 MDLabel:
                     id: favs_label

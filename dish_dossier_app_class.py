@@ -20,6 +20,7 @@ from kivy.uix.image import Image
 from kivymd.uix.list import OneLineAvatarListItem, MDList
 from recipe import Recipe
 
+
 # Builder.load_file('layouts/main_layout.kv')
 
 
@@ -42,15 +43,15 @@ class ScreenOne(MDScreen):
 
     def set_recipe_info(self, recipe):
         self.ids.recipe_title.text = recipe.title.upper()
-        self.ids.recipe_prep_time.text = f"Prep. time: {recipe.prep_time if recipe.prep_time != '-1' else 'N/A'}"
-        self.ids.recipe_cook_time.text = f"Cook time: {recipe.cooking_time if recipe.cooking_time != '-1' else 'N/A'}"
-        self.ids.recipe_total_time.text = f"Total time: {recipe.total_time if recipe.total_time != '-1' else 'N/A'}"
-        self.ids.recipe_servings.text = f"Servings {recipe.servings if recipe.servings != '-1' else 'N/A'}"
+        self.ids.recipe_prep_time.text = f"Prep. time: {recipe.prep_time if recipe.prep_time != -1 else 'N/A'}"
+        self.ids.recipe_cook_time.text = f"Cook time: {recipe.cook_time if recipe.cook_time != -1 else 'N/A'}"
+        self.ids.recipe_total_time.text = f"Total time: {recipe.total_cook_time if recipe.total_cook_time != -1 else 'N/A'}"
+        self.ids.recipe_servings.text = f"Servings {recipe.servings if recipe.servings != -1 else 'N/A'}"
         # self.ids.recipe_descr.text = recipe.description
         self.ids.recipe_instr.text = f"Instructions:\n{recipe.instructions}"
 
         # Set Recipe Image and Ingredients
-        self.ids.recipe_full_image.source = recipe.image if recipe.image != '-1' and recipe.image else 'img_1.png'
+        self.ids.recipe_full_image.source = recipe.image_url if recipe.image_url else 'img_1.png'
 
         # Set Image button and label
         if recipe.favourite:
@@ -61,15 +62,14 @@ class ScreenOne(MDScreen):
             self.ids.favs_label.text = "Add to Favourites"
 
         res = "Ingredients:\n"
-        for ingredient in recipe.extendedIngredients:
-            res += f"{ingredient['original']}\n"
+        for ingredient in recipe.ingredients:
+            res += f"{ingredient.ingredient}\n"
         self.ids.recipe_ingr.text = res
 
 
 class ScreenTwo(MDScreen):
     def __init__(self, **kwargs):
         super(ScreenTwo, self).__init__(**kwargs)
-
 
     def switch_screen(self):
         # self.manager.transition = NoTransition()
@@ -78,8 +78,6 @@ class ScreenTwo(MDScreen):
 
 class DishDossierController(BoxLayout):
     pass
-    # def __init__(self, **kwargs):
-    #     super(BoxLayout, self).__init__(**kwargs)
 
 
 class DishDossierApp(MDApp):
@@ -88,9 +86,9 @@ class DishDossierApp(MDApp):
         self.api_handler = RecipeAPIHandler()
         self.model = DishDossierModel()
         self.db = DBHandler()
-        # self.selected_recipe_list = 'all_recipes'
+        self.selected_recipe_list = 'all_recipes'
         # self.load_random_recipe()
-        # self.load_recipe_list_with_recipes(self.model.all_recipes)
+        # self.load_recipe_list_with_recipes()
 
         self.current_recipe = None
 
@@ -109,80 +107,80 @@ class DishDossierApp(MDApp):
 
     def load_random_recipe(self):
         print('LOAD RECIPE FROM API')
-        recipes = self.api_handler.load_random_recipes_from_api()
+        self.load_recipe_list_with_recipes()
+        # recipes = self.api_handler.load_random_recipes_from_api()
+        #
+        # for recipe in recipes:
+        #     print(recipe)
+        #     # rec = Recipe(recipe)
+        #
+        #     # self.model.add_recipe(rec)
+        #     # self.model.all_recipes.append(rec)
+        #     recipe_data = {
+        #         "recipe_api_id": recipe['id'],
+        #         "title": recipe['title'],
+        #         "prep_time": recipe['preparationMinutes'],
+        #         "cook_time": recipe['cookingMinutes'],
+        #         "total_cook_time": recipe['readyInMinutes'],
+        #         "servings": recipe['servings'],
+        #         "image_url": recipe['image'] if recipe['image'] != '' else 'img.png',
+        #         "favourite": False,
+        #         "original_recipe": False,
+        #         "instructions": recipe['instructions'],
+        #     }
+        #
+        #     ingredients_data = recipe['extendedIngredients']
+        #
+        #     recipe_exists = self.db.add_recipe(**recipe_data, ingredients_data=ingredients_data)
+        #     # recipe_id = self.db.add_recipe(recipe_api_id, title, prep_time, cook_time, total_cook_time, servings, image,
+        #     #                                favourite,
+        #     #                                original_recipe, instructions, ingredients_data)
+        #
+        #     print(f"Recipe_ID: {recipe_exists}")
+
+    def load_recipe_list_with_recipes(self, recipes):
+        print('LOAD RECIPE FROM LIST')
+
+        # recipes = self.db.get_all_recipes()
+        print(f"ALL RECIPES:\n {recipes}")
+
+        self.root.ids.recipe_list.clear_widgets()
 
         for recipe in recipes:
-            # print(recipe)
-            rec = Recipe(recipe)
-
-            self.model.add_recipe(rec)
-            # self.model.all_recipes.append(rec)
-            self.load_recipe_list_with_recipes(self.model.get_all_recipes())
-
-    def load_recipe_list_with_recipes(self, recipe_list):
-        print('LOAD RECIPE FROM LIST')
-        self.root.ids.recipe_list.clear_widgets()
-        # print(recipe_list)
-        # for i in range(11):
-        # print(self.root.ids)
-        for recipe in recipe_list:
             # recipe = recipe_list[i]
-            # print(recipe.id)
-            item = RecipeItem(id=recipe.id, text=recipe.title, size_hint_y=None, height=300)
+            print(recipe.title)
+            item = RecipeItem(id=str(recipe.recipe_api_id), text=recipe.title, size_hint_y=None, height=300)
 
-            item.ids.recipe_img.source = recipe.image
+            item.ids.recipe_img.source = recipe.image_url
             item.bind(on_release=self.on_recipe_select)
 
             self.root.ids.recipe_list.add_widget(item)
 
     def on_recipe_select(self, instance):
         print(self.root.ids.screen_one.ids)
-        recipe = self.model.search_for_recipe(instance.id, self.selected_recipe_list)[0]
-        print(recipe)
+        print(instance.id)
+        recipe = self.db.get_recipe(instance.id)
+        # recipe = self.model.search_for_recipe(instance.id, self.selected_recipe_list)[0]
+        # print(recipe.title)
         # print(self.root.ids)
         self.current_recipe = recipe
         #
         print(f"TITLE: {recipe.title}")
         self.root.ids.screen_one.set_recipe_info(recipe)
-        # self.root.ids.recipe_title.text = recipe.title.upper()
-        # self.root.ids.recipe_prep_time.text = f"Prep. time: {recipe.prep_time if recipe.prep_time != '-1' else 'N/A'}"
-        # self.root.ids.recipe_cook_time.text = f"Cook time: {recipe.cooking_time if recipe.cooking_time != '-1' else 'N/A'}"
-        # self.root.ids.recipe_total_time.text = f"Total time: {recipe.total_time if recipe.total_time != '-1' else 'N/A'}"
-        # self.root.ids.recipe_servings.text = f"Servings {recipe.servings if recipe.servings != '-1' else 'N/A'}"
-        # # self.ids.recipe_descr.text = recipe.description
-        # self.root.ids.recipe_instr.text = f"Instructions:\n{recipe.instructions}"
-        #
-        # # Set Recipe Image and Ingredients
-        # self.root.ids.recipe_full_image.source = recipe.image
-        #
-        # # Set Image button and label
-        # if recipe.favourite:
-        #     self.root.ids.favs_button.icon = "heart"
-        #     self.root.ids.favs_label.text = "Added to Favourites"
-        # else:
-        #     self.root.ids.favs_button.icon = "heart-outline"
-        #     self.root.ids.favs_label.text = "Add to Favourites"
-        #
-        # res = "Ingredients:\n"
-        # for ingredient in recipe.extendedIngredients:
-        #     res += f"{ingredient['original']}\n"
-        # self.root.ids.recipe_ingr.text = res
-        # print("select")
 
     def on_recipe_list_select(self, list):
         # self.ids.recipe_list.clear_widgets()
         if list == "all_recipes":
             print("SELECT Sidebar")
-            self.load_recipe_list_with_recipes(self.model.all_recipes)
+            self.load_recipe_list_with_recipes(self.db.get_all_recipes())
+            # self.load_recipe_list_with_recipes()
         elif list == "my_recipes":
-            self.load_recipe_list_with_recipes(self.model.my_recipes)
+            self.load_recipe_list_with_recipes(self.db.get_original_recipes())
         elif list == "favourites":
             print("SELECT Sidebar")
-            self.load_recipe_list_with_recipes(self.model.favourites)
+            self.load_recipe_list_with_recipes(self.db.get_all_favourite_recipes())
 
         self.selected_recipe_list = list
-        # print("sidebar")
-        # print(list)
 
     def handle_search(self, search_str):
         print(search_str)
@@ -195,9 +193,11 @@ class DishDossierApp(MDApp):
         self.load_recipe_list_with_recipes(res)
         print(f"RES {res}")
 
-    def add_to_favourites(self):
-        self.model.favourites.append(self.current_recipe)
-        self.current_recipe.favourite = True
+    def add_or_remove_from_favourites(self):
+        self.db.change_recipe_favourite_value(self.current_recipe)
+
+        if not self.current_recipe.favourite:
+            self.on_recipe_list_select(self.selected_recipe_list)
 
     def remove_from_favourites(self):
         self.current_recipe.favourite = False
