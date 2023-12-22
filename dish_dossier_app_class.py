@@ -1,10 +1,17 @@
 import kivy
 import sqlite3 as sq
 from kivy.core.window import Window
+from kivy.metrics import dp
 from kivy.uix.screenmanager import NoTransition
 from kivymd.app import MDApp
+from kivymd.uix.boxlayout import MDBoxLayout
+from kivymd.uix.button import MDFlatButton, MDRaisedButton
+from kivymd.uix.dialog import MDDialog
+from kivymd.uix.label import MDLabel
+from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.screenmanager import MDScreenManager
+from kivymd.uix.selectioncontrol import MDCheckbox
 
 from db_handler import DBHandler
 # from controller import DishDossierController
@@ -17,7 +24,7 @@ Config.set('graphics', 'resizable', False)
 from kivy.lang import Builder
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.image import Image
-from kivymd.uix.list import OneLineAvatarListItem, MDList
+from kivymd.uix.list import OneLineAvatarListItem, MDList, IRightBodyTouch, OneLineListItem, OneLineAvatarIconListItem
 from recipe import Recipe
 
 
@@ -76,6 +83,29 @@ class ScreenTwo(MDScreen):
         self.manager.current = 'screen_one'
 
 
+class ListItemWithCheckbox(OneLineListItem):
+    def __init__(self, **kwargs):
+        super(ListItemWithCheckbox, self).__init__(**kwargs)
+
+
+class ItemConfirm(OneLineAvatarIconListItem):
+    divider = None
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.selected = False
+
+    def set_icon(self, instance_check):
+        if not instance_check.active:
+            instance_check.active = True  # False if instance_check.active else True
+        else:
+            instance_check.active = False
+        # check_list = instance_check.get_widgets(instance_check.group)
+        # for check in check_list:
+        #     if check != instance_check:
+        #         check.active = False
+
+
 class DishDossierController(BoxLayout):
     pass
 
@@ -91,6 +121,9 @@ class DishDossierApp(MDApp):
         # self.load_recipe_list_with_recipes()
 
         self.current_recipe = None
+        # self.menu = None
+        self.dialog = None
+        self.search_selection = []
 
     def build(self):
         Window.size = (1280, 720)
@@ -175,35 +208,48 @@ class DishDossierApp(MDApp):
             self.load_recipe_list_with_recipes(self.db.get_all_recipes())
             # self.load_recipe_list_with_recipes()
         elif list == "my_recipes":
-            self.load_recipe_list_with_recipes(self.db.get_original_recipes())
+            self.load_recipe_list_with_recipes(self.db.get_all_original_recipes())
         elif list == "favourites":
             print("SELECT Sidebar")
             self.load_recipe_list_with_recipes(self.db.get_all_favourite_recipes())
 
         self.selected_recipe_list = list
 
-    def handle_search(self, search_str):
-        print(search_str)
-        self.root.ids.search_text.text = ""
-        self.search_for_recipe(search_str)
+    # def handle_search(self, search_str):
+    #     print(f"Searched str: {search_str}")
+    #     self.root.ids.search_text.text = ""
+    #     self.search_for_recipe(search_str)
 
     def search_for_recipe(self, look_for):
-        res = self.model.search_for_recipe(look_for, self.selected_recipe_list)
+        print(f"Searched str: {look_for}")
 
-        self.load_recipe_list_with_recipes(res)
-        print(f"RES {res}")
+        self.root.ids.search_text.text = ""
+        print(f"CURRENT LIST: {self.selected_recipe_list}")
+
+        search_by = []
+
+        if self.search_selection:
+            for criteria in self.search_selection:
+                if criteria[2] is True:
+                    print(criteria[0])
+                    search_by.append(criteria[0])
+        else:
+            print("NONEEE")
+            search_by.append("title")
+
+        recipes = self.db.search_for_recipes(search_by, look_for)
+
+        for recipe in recipes:
+            print(recipe.title)
+
+        self.load_recipe_list_with_recipes(recipes)
+        # print(f"RES {res}")
 
     def add_or_remove_from_favourites(self):
         self.db.change_recipe_favourite_value(self.current_recipe)
 
         if not self.current_recipe.favourite:
             self.on_recipe_list_select(self.selected_recipe_list)
-
-    def remove_from_favourites(self):
-        self.current_recipe.favourite = False
-
-        self.model.favourites.remove(self.current_recipe)
-        self.on_recipe_list_select(self.selected_recipe_list)
 
     def on_scroll_stop(self, scroll_y):
         if scroll_y < 0.01:
@@ -236,6 +282,147 @@ class DishDossierApp(MDApp):
     def remove_image(self):
         self.root.ids.recipe_full_image.source = ""
         self.image_source = ""
+
+    def show_search_by_options(self):
+        if not self.dialog:
+            self.dialog = MDDialog(
+                title="Choose search method",
+                type="confirmation",
+                items=[
+                    ItemConfirm(id="title_item", text="Title"),
+                    ItemConfirm(id="ingredient_item", text="Ingredient"),
+                    ItemConfirm(id="cuisine_item", text="Cuisine")
+                ],
+                buttons=[
+                    MDFlatButton(
+                        id="cancel_btn",
+                        text="CANCEL",
+                        theme_text_color="Custom",
+                        text_color=self.theme_cls.primary_color,
+                        on_release=lambda instance: self.close_search_by_menu(instance),
+                    ),
+                    MDRaisedButton(
+                        id="ok_btn",
+                        text="OK",
+                        theme_text_color="Custom",
+                        # text_color=self.theme_cls.primary_color,
+                        on_release=lambda instance: self.ok_search_by_menu(instance),
+                    ),
+                ],
+                on_touch_down=lambda instance, touch: self.check_touch_outside(instance, touch),
+            )
+
+            # Set searching by title to be a default
+            self.dialog.items[0].ids.check.active = True
+            self.dialog.items[0].ids.check.theme_text_color = "Custom"
+            self.dialog.items[0].ids.check.text_color = self.theme_cls.primary_color
+            self.dialog.items[0].state = "down"
+            self.ok_search_by_menu(self.dialog)
+
+        self.dialog.open()
+
+    # Check if clicked outside the dialog
+    def check_touch_outside(self, instance, touch):
+        if instance.collide_point(*touch.pos):
+            # Touch is inside the dialog, do nothing
+            pass
+        else:
+            # Touch is outside the dialog, close the dialog
+            self.close_search_by_menu(instance)
+
+    # Closes the dialog without saving the changes
+    def close_search_by_menu(self, instance):
+
+        for i in range(len(self.dialog.items)):
+            current_child_state = self.dialog.items[i].state
+            current_child_active = self.dialog.items[i].ids.check.active
+
+            if current_child_state != self.search_selection[i][1] or current_child_active != self.search_selection[i][2]:
+                self.dialog.items[i].state = self.search_selection[i][1]
+                self.dialog.items[i].ids.check.active = self.search_selection[i][2]
+                # print("CLOSE")
+                # print(current_child_state)
+                # print(current_child_active)
+
+            # print("CLOSE")
+            # print("---------------------------")
+            # print(self.dialog.items[i].state)
+            # print(self.dialog.items[i].ids.check.active)
+
+        self.dialog.dismiss()
+
+    # Closes the dialog and saves the changes
+    def ok_search_by_menu(self, instance):
+        self.search_selection = []
+
+        if not list(filter(lambda x: x.ids.check.active is True, self.dialog.items)):
+            # print("NOt ONE TRUE")
+            self.dialog.items[0].ids.check.active = True
+            self.dialog.items[0].state = "down"
+            # return
+
+        for child in self.dialog.items:
+            # print("OKOKOKOK")
+            # print(child.state)
+            # print(child.ids.check.active)
+            if child.state == "normal" and child.ids.check.active is True:
+                child.state = "down"
+            elif child.state == "down" and child.ids.check.active is False:
+                child.state = "normal"
+
+            # print("---------------------------")
+            # print(child.state)
+            # print(child.ids.check.active)
+            self.search_selection.append((child.text.lower(), child.state, child.ids.check.active))
+            # print(self.dialog_selection)
+        self.dialog.dismiss()
+
+    # def check_button_state(self, instance, value):
+    #     print("CHECK CHECK")
+    #     print(instance.ids)
+    #     # print(value)
+    #
+    #     for child in self.dialog.items:
+    #         print(child.text)
+    #         print(child.state)
+    #         print(child.ids.check.active)
+
+    # def show_filter_menu(self):
+    #     criteria = [
+    #             {"viewclass": "MDFlatButton", "id": "title_btn", "text": "Title", "on_release": self.toggle_button_callback},
+    #             {"viewclass": "OneLineListItem", "text": "Ingredient", "on_release": self.toggle_button_callback},
+    #             {"viewclass": "OneLineListItem", "text": "Cuisine", "on_release": self.toggle_button_callback},
+    #     ]
+    #
+    #     self.menu = MDDropdownMenu(
+    #         caller=self.root.ids.search_by_btn,
+    #         items=criteria,
+    #         # items=[
+    #         #     {"viewclass": "MDFlatButton", "id": "i1", "text": "Title", "on_release": self.toggle_button_callback},
+    #         #     {"viewclass": "OneLineListItem", "text": "Ingredient", "on_release": self.toggle_button_callback},
+    #         #     {"viewclass": "OneLineListItem", "text": "Cuisine", "on_release":  self.toggle_button_callback},
+    #         # ],
+    #         width_mult=3,
+    #     )
+
+    #     self.menu.open()
+
+    def toggle_button_callback(self, instance):
+        # instance.selected = not instance.selected
+        print(instance.ids)
+        print("cheeck")
+        print("SHIIIIIIIIIT")
+        self.dialog.dismiss()
+
+    def filter_callback(self, criterion, active):
+        if active:
+            print(f"Selected criterion: {criterion}")
+        else:
+            print(f"Unselected criterion: {criterion}")
+
+    def hide_filter_menu(self, instance):
+        # Called when the dropdown menu is dismissed
+        print("HIDE")
 
     # def _build_recipe_list(self):
     #     # Build the left column for the list of recipes

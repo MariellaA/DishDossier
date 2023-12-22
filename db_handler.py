@@ -1,6 +1,6 @@
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Table, Boolean, Text
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Table, Boolean, Text, or_
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import declarative_base, relationship, sessionmaker
+from sqlalchemy.orm import declarative_base, relationship, sessionmaker, aliased
 import sqlite3 as sq
 
 Base = declarative_base()
@@ -214,8 +214,68 @@ class DBHandler:
         recipes = self.session.query(Recipe).filter_by(favourite=True,).all()
         return recipes
 
-    def get_original_recipes(self):
+    def get_all_original_recipes(self):
         recipes = self.session.query(Recipe).filter_by(original_recipe=True,).all()
+        return recipes
+
+    def search_for_recipes(self, criteria, search_text):
+        print("SEARCHING")
+        print(criteria)
+        print(search_text)
+        # for c in criteria:
+        #     c = c.lower()
+        #     print(c)
+        #     if criteria == "Title":
+        #         pass
+        #     recipes = self.session.query(Recipe).filter_by(c=text).all()
+
+
+        # Create a base query
+        base_query = self.session.query(Recipe)
+
+        # Create aliases for the Recipe table to handle multiple criteria;
+        # Allows to refer to the same table with different names in a single query;
+        # useful when you want to join a table with itself or perform other operations
+        # where you need to treat the same table as distinct entities
+        recipe_alias = aliased(Recipe)
+        ingredient_alias = aliased(Ingredient)
+
+        # Build the dynamic OR clause for each criterion
+        or_clauses = []
+
+        for criterion in criteria:
+            if criterion == "title":
+                or_clauses.append(Recipe.title.ilike(f'%{search_text}%'))
+            elif criterion == "ingredient":
+                # Assuming ingredients is a list of ingredient names
+                # or_clauses.append(ingredient_alias.ingredient.in_(search_text))
+                or_clauses.append(Ingredient.ingredient.ilike(f'%{search_text}%'))
+                # or_clauses.append(recipe_alias.ingredients.any(Ingredient.ingredient.in_(search_text)))
+                # or_clauses.append(recipe_alias.ingredients.any(Ingredient.ingredient.ilike(f'%{search_text}%')))
+
+            # elif criterion == "cuisine":
+            #     # Assuming cuisine is a string representing the cuisine type
+            #         or_clauses.append(recipe_alias.cuisine == cuisine)
+
+            # field = getattr(recipe_alias, criterion)
+            # print(field)
+            # or_clauses.append(field.ilike(f"%{search_text}%"))
+
+        # Combine the OR clauses with an AND clause
+        combined_clause = or_(*or_clauses)
+        print(combined_clause)
+
+        # Apply the dynamic clause to the base query
+        # recipes = base_query.join(recipe_alias).filter(combined_clause).all()
+        recipes = (
+            self.session.query(Recipe)
+            .outerjoin(recipes_ingredients, Recipe.recipe_id == recipes_ingredients.c.recipe_id)
+            .outerjoin(Ingredient, recipes_ingredients.c.ingredient_id == Ingredient.ingredient_id)
+            .filter(combined_clause)
+            .all()
+        )
+
+        # print(recipes[0].title)
         return recipes
 
     def get_recipe(self, iid):

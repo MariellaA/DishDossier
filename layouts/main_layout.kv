@@ -19,6 +19,14 @@
             pos: self.pos[0], separator.center_y
             size: separator.width, self.thickness
 
+<ItemConfirm>
+    on_release: root.set_icon(check)
+
+    CheckboxLeftWidget:
+        id: check
+        #on_active: app.check_button_state(self, self.active)
+        #group: "check"
+
 
 <ScreenOne>:
     name: 'screen_one'
@@ -217,7 +225,7 @@
                 width: "400dp"
                 height: "300dp"
 
-                BoxLayout:
+                MDBoxLayout:
                     orientation: 'horizontal'
                     size_hint_y: None
                     height: dp(40)
@@ -292,7 +300,7 @@ DishDossierController:
                         icon: 'rss'
                         font_name: "nasalization-rg.ttf"
                         on_release: app.on_recipe_list_select('all_recipes') #if self.state != 'Down'
-                        #on_release: app,transition_to('reels')
+                        #on_release: app.transition_to('reels')
 
                     # My Recipes
                     MDNavigationRailItem:
@@ -336,10 +344,18 @@ DishDossierController:
 
             ###### SEARCH BAR ######
             MDGridLayout:
-                cols: 2
+                cols: 3
                 size_hint: 1, 0.1
                 #valign: "middle"
                 spacing: 50
+
+                MDRaisedButton:
+                    id: search_by_btn
+                    text: "Search by"
+                    #pos_hint: {'center_x': 0.5}
+                    #on_release: app.show_filter_menu()
+                    on_release: app.show_search_by_options()
+
 
                 MDTextField:
                     id: search_text
@@ -348,7 +364,7 @@ DishDossierController:
                     icon_right: "magnify"
                     icon_right_color_focus: "orange"
                     #helper_text: "Search"
-                    on_text_validate: app.handle_search(self.text)
+                    on_text_validate: app.search_for_recipe(self.text)
 
                     #max_text_length: 15
                     #size_hint: 1, 0.1
@@ -359,7 +375,7 @@ DishDossierController:
                 MDIconButton:
                     icon: "hamburger-plus"
                     #anchor: "center"
-                    icon_size: "25sp"
+                    #icon_size: "25sp"
                     #size_hint: None, None
                     #width: dp(34)
                     #pos_hint: {"center_x": 0.5, "center_y": 0}
