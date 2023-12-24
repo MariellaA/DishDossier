@@ -2,6 +2,8 @@ import kivy
 import sqlite3 as sq
 from kivy.core.window import Window
 from kivy.metrics import dp
+from kivy.uix.filechooser import FileChooserIconView
+from kivy.uix.popup import Popup
 from kivy.uix.screenmanager import NoTransition
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
@@ -82,10 +84,13 @@ class ScreenTwo(MDScreen):
         # self.manager.transition = NoTransition()
         self.manager.current = 'screen_one'
 
+    # Cancel editing or adding a recipe
+    def cancel_add_edit_recipe(self):
+        print(self.ids.add_cancel_btn.text)
 
-class ListItemWithCheckbox(OneLineListItem):
-    def __init__(self, **kwargs):
-        super(ListItemWithCheckbox, self).__init__(**kwargs)
+        # TODO: Clear the text from all widgets
+
+        self.switch_screen()
 
 
 class ItemConfirm(OneLineAvatarIconListItem):
@@ -279,6 +284,30 @@ class DishDossierApp(MDApp):
         # Implement code to allow the user to select an image
         pass
 
+    # Choose an image
+    def show_file_chooser(self):
+        file_chooser = FileChooserIconView()
+        file_chooser.bind(on_submit=self.file_selected)
+
+        popup = Popup(
+            title="Select a Photo",
+            content=file_chooser,
+            size_hint=(None, None),
+            size=(900, 700),
+        )
+        popup.open()
+
+    def file_selected(self, instance, selection, touch):
+        #print(instance.ids)
+        if selection:
+            selected_file = selection[0]
+            print(selected_file)
+            self.root.ids.screen_two.ids.recipe_image_display.source = selected_file
+            self.root.ids.screen_two.ids.recipe_image_display.reload()
+
+            # Close the file chooser popup
+            instance.parent.parent.parent.dismiss()
+
     def remove_image(self):
         self.root.ids.recipe_full_image.source = ""
         self.image_source = ""
@@ -337,7 +366,8 @@ class DishDossierApp(MDApp):
             current_child_state = self.dialog.items[i].state
             current_child_active = self.dialog.items[i].ids.check.active
 
-            if current_child_state != self.search_selection[i][1] or current_child_active != self.search_selection[i][2]:
+            if current_child_state != self.search_selection[i][1] or current_child_active != self.search_selection[i][
+                2]:
                 self.dialog.items[i].state = self.search_selection[i][1]
                 self.dialog.items[i].ids.check.active = self.search_selection[i][2]
                 # print("CLOSE")
@@ -376,6 +406,10 @@ class DishDossierApp(MDApp):
             self.search_selection.append((child.text.lower(), child.state, child.ids.check.active))
             # print(self.dialog_selection)
         self.dialog.dismiss()
+
+    # Save edited or new recipe
+    def done_add_edit_recipe(self):
+        print(self.root.ids.screen_two.ids.add_done_btn.text)
 
     # def check_button_state(self, instance, value):
     #     print("CHECK CHECK")

@@ -5,11 +5,11 @@ from kivymd.app import MDApp
 
 from controller import DishDossierController
 from model import DishDossierModel
-
-
-class DishDossierApp(MDApp):
-    def builder(self):
-        model = DishDossierModel()
-        controller = DishDossierController(model)
-        return controller
+#
+#
+# class DishDossierApp(MDApp):
+#     def builder(self):
+#         model = DishDossierModel()
+#         controller = DishDossierController(model)
+#         return controller
 

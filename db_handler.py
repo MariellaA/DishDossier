@@ -128,16 +128,29 @@ class DBHandler:
 
             # Check for existing ingredients and add only new ones
             for ingredient_info in ingredients_data:
+                # TODO: When using the API check if relationship between new recipes with already
+                #  existing ingredients is added to recipes_ingredient; affects ingredient displaying
                 print(ingredient_info)
                 try:
-                    ingredient = Ingredient(
-                        ingredient_api_id=ingredient_info['id'],
-                        ingredient=ingredient_info['originalString'] if 'originalString' in ingredient_info else
-                        ingredient_info['original']
+                    ingredient_api_id = ingredient_info['id']
+                    ingredient = (
+                        self.session.query(Ingredient)
+                        .filter_by(ingredient_api_id=ingredient_api_id)
+                        .first()
                     )
-                    self.session.add(ingredient)
-                    self.session.commit()
+
+                    if not ingredient:
+                        ingredient = Ingredient(
+                            ingredient_api_id=ingredient_info['id'],
+                            ingredient=ingredient_info['originalString'] if 'originalString' in ingredient_info else
+                            ingredient_info['original']
+                        )
+
+                        self.session.add(ingredient)
+                        self.session.commit()
+
                     recipe.ingredients.append(ingredient)
+                    self.session.commit()
                 except IntegrityError:
                     print("ingr rollback")
                     # Handle integrity error (e.g., duplicate API ID for ingredients)
@@ -211,11 +224,11 @@ class DBHandler:
         return recipes
 
     def get_all_favourite_recipes(self):
-        recipes = self.session.query(Recipe).filter_by(favourite=True,).all()
+        recipes = self.session.query(Recipe).filter_by(favourite=True, ).all()
         return recipes
 
     def get_all_original_recipes(self):
-        recipes = self.session.query(Recipe).filter_by(original_recipe=True,).all()
+        recipes = self.session.query(Recipe).filter_by(original_recipe=True, ).all()
         return recipes
 
     def search_for_recipes(self, criteria, search_text):
@@ -228,7 +241,6 @@ class DBHandler:
         #     if criteria == "Title":
         #         pass
         #     recipes = self.session.query(Recipe).filter_by(c=text).all()
-
 
         # Create a base query
         base_query = self.session.query(Recipe)
@@ -279,11 +291,11 @@ class DBHandler:
         return recipes
 
     def get_recipe(self, iid):
-        recipe = self.session.query(Recipe).filter_by(recipe_api_id=iid,).limit(1).first()
+        recipe = self.session.query(Recipe).filter_by(recipe_api_id=iid, ).limit(1).first()
         return recipe
 
     def change_recipe_favourite_value(self, recipe):
-        recipe.favourite = True if recipe.favourite == False else False
+        recipe.favourite = True if recipe.favourite is False else False
         self.session.commit()
 
     def drop_tables(self):
