@@ -14,6 +14,7 @@ from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.screenmanager import MDScreenManager
 from kivymd.uix.selectioncontrol import MDCheckbox
+from sqlalchemy import Null
 
 from db_handler import DBHandler
 # from controller import DishDossierController
@@ -44,6 +45,14 @@ class RecipeItem(OneLineAvatarListItem):
 class ScreenOne(MDScreen):
     def __init__(self, **kwargs):
         super(ScreenOne, self).__init__(**kwargs)
+
+    def switch_on_delete_btn(self, on_off):
+        if on_off is False:
+            self.ids.delete_btn.opacity = 0
+            self.ids.delete_btn.disabled = True
+        elif on_off is True:
+            self.ids.delete_btn.opacity = 1
+            self.ids.delete_btn.disabled = False
 
     def switch_screen(self):
         # print(self.manager)
@@ -84,13 +93,93 @@ class ScreenTwo(MDScreen):
         # self.manager.transition = NoTransition()
         self.manager.current = 'screen_one'
 
+    # Choose an image
+    def show_image_chooser(self):
+        file_chooser = FileChooserIconView()
+        file_chooser.bind(on_submit=self.file_selected)
+
+        popup = Popup(
+            title="Select a Photo",
+            content=file_chooser,
+            size_hint=(None, None),
+            size=(900, 700),
+        )
+        popup.open()
+
+    def file_selected(self, instance, selection, touch):
+        # print(instance.ids)
+        if selection:
+            selected_file = selection[0]
+            print(selected_file)
+            self.ids.s2_recipe_image_display.source = selected_file
+            self.ids.s2_recipe_image_display.reload()
+
+            # Close the file chooser popup
+            instance.parent.parent.parent.dismiss()
+
+    # Delete image:
+    def remove_image(self):
+        # TODO: This does not show how the image is removed
+        self.ids.s2_recipe_image_display.source = ""
+        self.ids.s2_recipe_image_display.reload()
+
     # Cancel editing or adding a recipe
     def cancel_add_edit_recipe(self):
         print(self.ids.add_cancel_btn.text)
+        # print(self.ids)
 
-        # TODO: Clear the text from all widgets
+        # Clear input data
+        self.ids.s2_recipe_title_input.text = ""
+        self.ids.s2_recipe_servings.text = ""
+        self.ids.s2_recipe_prep_time.text = ""
+        self.ids.s2_recipe_cook_time.text = ""
+        self.ids.s2_recipe_total_time.text = ""
+        self.ids.s2_recipe_instr.text = ""
+        self.ids.s2_recipe_image_display.source = ""
+        print(self.ids.s2_recipe_ingr.text.split('\n'))
+        self.ids.s2_recipe_ingr.text = ""
 
         self.switch_screen()
+
+    def show_edit_recipe_info(self, title, servings, prep_t, cook_t, total_t, instr, img, ingr):
+        self.ids.s2_recipe_title_input.text = title
+        self.ids.s2_recipe_servings.text = str(servings) if servings != -1 else ""
+        self.ids.s2_recipe_prep_time.text = str(prep_t) if prep_t != -1 else ""
+        self.ids.s2_recipe_cook_time.text = str(cook_t) if cook_t != -1 else ""
+        self.ids.s2_recipe_total_time.text = str(total_t) if total_t != -1 else ""
+        self.ids.s2_recipe_instr.text = instr
+        self.ids.s2_recipe_image_display.source = img
+
+        for ingredient in ingr:
+            self.ids.s2_recipe_ingr.text += ingredient.ingredient + "\n"
+        self.ids.s2_recipe_ingr.text = self.ids.s2_recipe_ingr.text[:-1]
+        # self.ids.s2_recipe_ingr.text = ingr
+
+    def done_btn(self):
+        print(self.ids.add_done_btn.text)
+
+        title = self.ids.s2_recipe_title_input.text
+        servings = self.ids.s2_recipe_servings.text
+        prep_t = self.ids.s2_recipe_prep_time.text
+        cook_t = self.ids.s2_recipe_cook_time.text
+        total_t = self.ids.s2_recipe_total_time.text
+        instr = self.ids.s2_recipe_instr.text
+        # instr = self.root.ids.screen_two.ids.s2_recipe_instr.text.split('\n')
+
+        print(instr)
+
+        if self.ids.s2_recipe_image_display.source != "":
+            image = self.ids.s2_recipe_image_display.source
+        else:
+            image = "img.png"
+
+        print(self.ids.s2_recipe_ingr.text.split("\n"))
+        ingr = self.ids.s2_recipe_ingr.text.split("\n")
+
+        if title == "" or instr == "" or ingr == "" or (title == "" and instr == "" and ingr == ""):
+            return
+
+        return None, title, prep_t, cook_t, total_t, servings, image, False, True, instr, ingr
 
 
 class ItemConfirm(OneLineAvatarIconListItem):
@@ -121,6 +210,7 @@ class DishDossierApp(MDApp):
         self.api_handler = RecipeAPIHandler()
         self.model = DishDossierModel()
         self.db = DBHandler()
+
         self.selected_recipe_list = 'all_recipes'
         # self.load_random_recipe()
         # self.load_recipe_list_with_recipes()
@@ -140,41 +230,35 @@ class DishDossierApp(MDApp):
 
         return Builder.load_file('layouts/main_layout.kv')
 
-    def show_data(self):
-        pass
-
     def load_random_recipe(self):
         print('LOAD RECIPE FROM API')
-        self.load_recipe_list_with_recipes()
-        # recipes = self.api_handler.load_random_recipes_from_api()
-        #
-        # for recipe in recipes:
-        #     print(recipe)
-        #     # rec = Recipe(recipe)
-        #
-        #     # self.model.add_recipe(rec)
-        #     # self.model.all_recipes.append(rec)
-        #     recipe_data = {
-        #         "recipe_api_id": recipe['id'],
-        #         "title": recipe['title'],
-        #         "prep_time": recipe['preparationMinutes'],
-        #         "cook_time": recipe['cookingMinutes'],
-        #         "total_cook_time": recipe['readyInMinutes'],
-        #         "servings": recipe['servings'],
-        #         "image_url": recipe['image'] if recipe['image'] != '' else 'img.png',
-        #         "favourite": False,
-        #         "original_recipe": False,
-        #         "instructions": recipe['instructions'],
-        #     }
-        #
-        #     ingredients_data = recipe['extendedIngredients']
-        #
-        #     recipe_exists = self.db.add_recipe(**recipe_data, ingredients_data=ingredients_data)
-        #     # recipe_id = self.db.add_recipe(recipe_api_id, title, prep_time, cook_time, total_cook_time, servings, image,
-        #     #                                favourite,
-        #     #                                original_recipe, instructions, ingredients_data)
-        #
-        #     print(f"Recipe_ID: {recipe_exists}")
+        # self.load_recipe_list_with_recipes()
+        recipes = self.api_handler.load_random_recipes_from_api()
+
+        for recipe in recipes:
+            print(recipe)
+
+            recipe_data = {
+                "recipe_api_id": recipe['id'],
+                "title": recipe['title'],
+                "prep_time": recipe['preparationMinutes'],
+                "cook_time": recipe['cookingMinutes'],
+                "total_cook_time": recipe['readyInMinutes'],
+                "servings": recipe['servings'],
+                "image_url": recipe['image'] if recipe['image'] != '' else 'img.png',
+                "favourite": False,
+                "original_recipe": False,
+                "instructions": recipe['instructions'],
+            }
+
+            ingredients_data = recipe['extendedIngredients']
+
+            recipe_exists = self.db.add_recipe(**recipe_data, ingredients_data=ingredients_data)
+            # recipe_id = self.db.add_recipe(recipe_api_id, title, prep_time, cook_time, total_cook_time, servings, image,
+            #                                favourite,
+            #                                original_recipe, instructions, ingredients_data)
+
+            print(f"Recipe_ID: {recipe_exists}")
 
     def load_recipe_list_with_recipes(self, recipes):
         print('LOAD RECIPE FROM LIST')
@@ -186,7 +270,7 @@ class DishDossierApp(MDApp):
 
         for recipe in recipes:
             # recipe = recipe_list[i]
-            print(recipe.title)
+            # print(recipe.title)
             item = RecipeItem(id=str(recipe.recipe_api_id), text=recipe.title, size_hint_y=None, height=300)
 
             item.ids.recipe_img.source = recipe.image_url
@@ -195,35 +279,41 @@ class DishDossierApp(MDApp):
             self.root.ids.recipe_list.add_widget(item)
 
     def on_recipe_select(self, instance):
-        print(self.root.ids.screen_one.ids)
-        print(instance.id)
-        recipe = self.db.get_recipe(instance.id)
-        # recipe = self.model.search_for_recipe(instance.id, self.selected_recipe_list)[0]
-        # print(recipe.title)
-        # print(self.root.ids)
+        # print(self.root.ids.screen_one.ids)
+        # print(instance.id)
+        # print(type(instance.id))
+
+        if instance.id != "None":
+            # print("NOT NONE")
+            recipe = self.db.get_recipe(instance.id)
+        else:
+            # print("NONEEEE")
+            recipe = self.db.get_original_recipe(instance.text)
+
         self.current_recipe = recipe
-        #
+
         print(f"TITLE: {recipe.title}")
         self.root.ids.screen_one.set_recipe_info(recipe)
 
     def on_recipe_list_select(self, list):
-        # self.ids.recipe_list.clear_widgets()
         if list == "all_recipes":
             print("SELECT Sidebar")
             self.load_recipe_list_with_recipes(self.db.get_all_recipes())
-            # self.load_recipe_list_with_recipes()
+            self.root.ids.screen_one.switch_on_delete_btn(False)
+            self.root.ids.recipe_scroll.scroll_y = 1
         elif list == "my_recipes":
             self.load_recipe_list_with_recipes(self.db.get_all_original_recipes())
+            self.root.ids.screen_one.switch_on_delete_btn(True)
+            self.root.ids.recipe_scroll.scroll_y = 1
         elif list == "favourites":
             print("SELECT Sidebar")
             self.load_recipe_list_with_recipes(self.db.get_all_favourite_recipes())
+            self.root.ids.screen_one.switch_on_delete_btn(False)
+            self.root.ids.recipe_scroll.scroll_y = 1
 
         self.selected_recipe_list = list
-
-    # def handle_search(self, search_str):
-    #     print(f"Searched str: {search_str}")
-    #     self.root.ids.search_text.text = ""
-    #     self.search_for_recipe(search_str)
+        self.on_recipe_select(self.root.ids.recipe_list.children[-1])
+        # print(self.root.ids.recipe_list.children[-1].text)
 
     def search_for_recipe(self, look_for):
         print(f"Searched str: {look_for}")
@@ -242,13 +332,18 @@ class DishDossierApp(MDApp):
             print("NONEEE")
             search_by.append("title")
 
-        recipes = self.db.search_for_recipes(search_by, look_for)
+        original = False
+        favs = False
 
-        for recipe in recipes:
-            print(recipe.title)
+        if self.selected_recipe_list == "my_recipes":
+            original = True
+        elif self.selected_recipe_list == "favourites":
+            favs = True
+
+        recipes = self.db.search_for_recipes(search_by, look_for, original, favs)
 
         self.load_recipe_list_with_recipes(recipes)
-        # print(f"RES {res}")
+        self.root.ids.recipe_scroll.scroll_y = 1
 
     def add_or_remove_from_favourites(self):
         self.db.change_recipe_favourite_value(self.current_recipe)
@@ -271,46 +366,55 @@ class DishDossierApp(MDApp):
         self.on_recipe_list_select(self.selected_recipe_list)
         self.root.ids.recipe_scroll.scroll_y = 1 - (1 / len(self.root.ids.recipe_list.children))
 
+    # Save new/edited recipe
+    def done_creating_editing_recipe(self):
+        recipe_info = self.root.ids.screen_two.done_btn()
+        print(recipe_info)
+
+        if recipe_info:
+            self.db.add_recipe(*recipe_info)
+            self.on_recipe_list_select(self.selected_recipe_list)
+            self.root.ids.screen_two.cancel_add_edit_recipe()
+
+    def delete_recipe(self):
+        print("DEEEEEELEEEETEEEE")
+        print(self.current_recipe.instructions)
+        self.db.delete_recipe(self.current_recipe.title, self.current_recipe.instructions)
+        self.on_recipe_list_select(self.selected_recipe_list)
+
+    # Edit original recipe
+    def edit_recipe(self):
+        print("EDIIIIIIIIIIIIIIIT")
+        print(self.current_recipe.recipe_api_id)
+        print(self.current_recipe.recipe_id)
+        print(self.current_recipe.instructions)
+        print(self.current_recipe)
+        self.switch_screen()
+        recipe = self.current_recipe
+
+        recipe_data = [self.current_recipe.title, self.current_recipe.servings, self.current_recipe.prep_time,
+                       self.current_recipe.cook_time, self.current_recipe.total_cook_time, self.current_recipe.instructions,
+                       self.current_recipe.image_url, self.current_recipe.ingredients]
+        print(recipe_data)
+        self.root.ids.screen_two.show_edit_recipe_info(*recipe_data)
+        self.root.ids.screen_two.ids.add_done_btn.on_release = self.donee
+        # recipe = self.db.get_original_recipe(self.current_recipe.title)
+        # print(recipe)
+        #self.db.delete_recipe(self.current_recipe.title, self.current_recipe.instructions)
+        #self.on_recipe_list_select(self.selected_recipe_list)
+
+    def donee(self):
+        print("DHSHSHZHRSHSH")
+
     def switch_screen(self):
         self.root.ids.screens.transition = NoTransition()
 
         if self.root.ids.screens.current == "screen_one":
             self.root.ids.screen_one.switch_screen()
+            self.root.ids.screen_two.ids.add_done_btn.on_release = self.done_creating_editing_recipe
         else:
             self.root.ids.screen_two.switch_screen()
-        # print(self.root.ids.screens.current)
-
-    def select_image(self):
-        # Implement code to allow the user to select an image
-        pass
-
-    # Choose an image
-    def show_file_chooser(self):
-        file_chooser = FileChooserIconView()
-        file_chooser.bind(on_submit=self.file_selected)
-
-        popup = Popup(
-            title="Select a Photo",
-            content=file_chooser,
-            size_hint=(None, None),
-            size=(900, 700),
-        )
-        popup.open()
-
-    def file_selected(self, instance, selection, touch):
-        #print(instance.ids)
-        if selection:
-            selected_file = selection[0]
-            print(selected_file)
-            self.root.ids.screen_two.ids.recipe_image_display.source = selected_file
-            self.root.ids.screen_two.ids.recipe_image_display.reload()
-
-            # Close the file chooser popup
-            instance.parent.parent.parent.dismiss()
-
-    def remove_image(self):
-        self.root.ids.recipe_full_image.source = ""
-        self.image_source = ""
+        print(self.root.ids.screens.current)
 
     def show_search_by_options(self):
         if not self.dialog:
@@ -366,8 +470,8 @@ class DishDossierApp(MDApp):
             current_child_state = self.dialog.items[i].state
             current_child_active = self.dialog.items[i].ids.check.active
 
-            if current_child_state != self.search_selection[i][1] or current_child_active != self.search_selection[i][
-                2]:
+            if (current_child_state != self.search_selection[i][1] or
+                    current_child_active != self.search_selection[i][2]):
                 self.dialog.items[i].state = self.search_selection[i][1]
                 self.dialog.items[i].ids.check.active = self.search_selection[i][2]
                 # print("CLOSE")
@@ -407,40 +511,6 @@ class DishDossierApp(MDApp):
             # print(self.dialog_selection)
         self.dialog.dismiss()
 
-    # Save edited or new recipe
-    def done_add_edit_recipe(self):
-        print(self.root.ids.screen_two.ids.add_done_btn.text)
-
-    # def check_button_state(self, instance, value):
-    #     print("CHECK CHECK")
-    #     print(instance.ids)
-    #     # print(value)
-    #
-    #     for child in self.dialog.items:
-    #         print(child.text)
-    #         print(child.state)
-    #         print(child.ids.check.active)
-
-    # def show_filter_menu(self):
-    #     criteria = [
-    #             {"viewclass": "MDFlatButton", "id": "title_btn", "text": "Title", "on_release": self.toggle_button_callback},
-    #             {"viewclass": "OneLineListItem", "text": "Ingredient", "on_release": self.toggle_button_callback},
-    #             {"viewclass": "OneLineListItem", "text": "Cuisine", "on_release": self.toggle_button_callback},
-    #     ]
-    #
-    #     self.menu = MDDropdownMenu(
-    #         caller=self.root.ids.search_by_btn,
-    #         items=criteria,
-    #         # items=[
-    #         #     {"viewclass": "MDFlatButton", "id": "i1", "text": "Title", "on_release": self.toggle_button_callback},
-    #         #     {"viewclass": "OneLineListItem", "text": "Ingredient", "on_release": self.toggle_button_callback},
-    #         #     {"viewclass": "OneLineListItem", "text": "Cuisine", "on_release":  self.toggle_button_callback},
-    #         # ],
-    #         width_mult=3,
-    #     )
-
-    #     self.menu.open()
-
     def toggle_button_callback(self, instance):
         # instance.selected = not instance.selected
         print(instance.ids)
@@ -448,15 +518,15 @@ class DishDossierApp(MDApp):
         print("SHIIIIIIIIIT")
         self.dialog.dismiss()
 
-    def filter_callback(self, criterion, active):
-        if active:
-            print(f"Selected criterion: {criterion}")
-        else:
-            print(f"Unselected criterion: {criterion}")
+    # def filter_callback(self, criterion, active):
+    #     if active:
+    #         print(f"Selected criterion: {criterion}")
+    #     else:
+    #         print(f"Unselected criterion: {criterion}")
 
-    def hide_filter_menu(self, instance):
-        # Called when the dropdown menu is dismissed
-        print("HIDE")
+    # def hide_filter_menu(self, instance):
+    #     # Called when the dropdown menu is dismissed
+    #     print("HIDE")
 
     # def _build_recipe_list(self):
     #     # Build the left column for the list of recipes
@@ -467,22 +537,6 @@ class DishDossierApp(MDApp):
     #         self.recipe_list.add_widget(item)
     #
     #     self.add_widget(self.recipe_list)
-    #
-    # def _build_recipe_details(self):
-    #     # Build the right column for displaying the details of the chosen recipe
-    #     self.recipe_details.add_widget(Image())  # Placeholder for recipe image
-    #     self.recipe_details.add_widget(OneLineAvatarListItem(text='Recipe Details'))
-    #     self.add_widget(self.recipe_details)
-
-    # def on_recipe_select(self, instance):
-    #     # Handle the event when a recipe is selected from the list
-    #     selected_recipe_index = self.recipe_list.children.index(instance)
-    #     recipe_details = self.model.get_recipe_details(selected_recipe_index)
-    #
-    #     # Update the right column with the details of the selected recipe
-    #     self.recipe_details.clear_widgets()
-    #     self.recipe_details.add_widget(Image(source=recipe_details['image']))
-    #     self.recipe_details.add_widget(OneLineAvatarListItem(text=recipe_details['title']))
 
     def switch_theme_style(self):
         self.theme_cls.primary_palette = (

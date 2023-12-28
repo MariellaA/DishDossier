@@ -1,4 +1,6 @@
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Table, Boolean, Text, or_
+import os
+
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Table, Boolean, Text, or_, and_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker, aliased
 import sqlite3 as sq
@@ -26,7 +28,7 @@ class Recipe(Base):
     favourite = Column(Boolean, default=False)
     original_recipe = Column(Boolean, default=False)
     instructions = Column(Text)
-    ingredients = relationship('Ingredient', secondary=recipes_ingredients)
+    ingredients = relationship('Ingredient', secondary=recipes_ingredients)  # , cascade='all, delete-orphan)
 
 
 class Ingredient(Base):
@@ -37,73 +39,15 @@ class Ingredient(Base):
 
 
 class DBHandler:
-    def __init__(self, database_url='sqlite:///dish_dossier_db.db'):
-        # self.conn = sq.connect('dish_dossier_db.db')  # Connect to the database
-        # self.cursor = self.conn.cursor()  # Create a cursor
-        # self.create_tables()
-
-        self.engine = create_engine(database_url, echo=True)
+    def __init__(self):
+        self._path = "sqlite:///" + os.path.join(os.path.dirname(os.path.abspath(__file__)), "dish_dossier_db.db")
+        # print(self._path)
+        self.engine = create_engine(self._path, echo=True)
         self.create_tables()
         self.session = sessionmaker(bind=self.engine)()
-        # self.create_session()
-
-    def check_if_recipe_exists(self, recipe_api_id):
-        # Check if the recipe exists in the database
-        self.cursor.execute("SELECT * FROM recipes WHERE recipe_api_id = ?", (recipe_api_id,))
-        existing_recipe = self.cursor.fetchone()
-
-        print(existing_recipe)
-
-        if existing_recipe:
-            print(f"Recipe '{existing_recipe[1]}' found in the database.")
-            self.conn.close()
-            return existing_recipe
-        else:
-            print(f"Recipe with API ID {recipe_api_id} not found in the database. Fetching from API.")
-            # self.conn.close()
 
     def create_tables(self):
         Base.metadata.create_all(bind=self.engine)
-
-    # def create_session(self):
-    #     Session = sessionmaker(bind=self.engine)
-
-    # def create_tables(self):
-    #     # Create RECIPES table
-    #     self.cursor.execute('''
-    #             CREATE TABLE IF NOT EXISTS recipes (
-    #                 recipe_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    #                 recipe_api_id INTEGER UNIQUE,
-    #                 title TEXT NOT NULL,
-    #                 prep_time INTEGER,
-    #                 cook_time INTEGER,
-    #                 total_cook_time INTEGER,
-    #                 servings INTEGER,
-    #                 image_url TEXT,
-    #                 favourite BOOLEAN DEFAULT 0,
-    #                 original_recipe BOOLEAN DEFAULT 0,
-    #                 instructions TEXT);
-    #         ''')
-    #
-    #     # Create INGREDIENTS table
-    #     self.cursor.execute('''
-    #             CREATE TABLE IF NOT EXISTS ingredients (
-    #                 ingredient_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    #                 ingredient_api_id INTEGER UNIQUE,
-    #                 ingredient TEXT);
-    #         ''')
-    #
-    #     # Create recipes_ingredients table
-    #     self.cursor.execute('''
-    #             CREATE TABLE IF NOT EXISTS recipes_ingredients (
-    #                 recipe_id INTEGER,
-    #                 ingredient_id INTEGER,
-    #                 FOREIGN KEY(recipe_id) REFERENCES recipes(recipe_id),
-    #                 FOREIGN KEY(ingredient_id) REFERENCES ingredients(ingredient_id));
-    #         ''')
-    #
-    #     # Commit the changes
-    #     self.conn.commit()
 
     def add_recipe(self, recipe_api_id, title, prep_time, cook_time, total_cook_time,
                    servings, image_url, favourite, original_recipe, instructions, ingredients_data):
@@ -125,6 +69,8 @@ class DBHandler:
             # Add the Recipe to the database
             self.session.add(recipe)
             self.session.commit()
+            print("ADDING")
+            print(ingredients_data)
 
             # Check for existing ingredients and add only new ones
             for ingredient_info in ingredients_data:
@@ -132,19 +78,30 @@ class DBHandler:
                 #  existing ingredients is added to recipes_ingredient; affects ingredient displaying
                 print(ingredient_info)
                 try:
-                    ingredient_api_id = ingredient_info['id']
-                    ingredient = (
-                        self.session.query(Ingredient)
-                        .filter_by(ingredient_api_id=ingredient_api_id)
-                        .first()
-                    )
+                    if not original_recipe:
+                        ingredient_api_id = ingredient_info['id']
+                        ingredient = (
+                            self.session.query(Ingredient)
+                            .filter_by(ingredient_api_id=ingredient_api_id)
+                            .first()
+                        )
+                    else:
+                        ingredient = (
+                            self.session.query(Ingredient).filter_by(ingredient=ingredient_info).first()
+                        )
 
                     if not ingredient:
-                        ingredient = Ingredient(
-                            ingredient_api_id=ingredient_info['id'],
-                            ingredient=ingredient_info['originalString'] if 'originalString' in ingredient_info else
-                            ingredient_info['original']
-                        )
+                        if not original_recipe:
+                            ingredient = Ingredient(
+                                ingredient_api_id=ingredient_info['id'],
+                                ingredient=ingredient_info['originalString'] if 'originalString' in ingredient_info else
+                                ingredient_info['original']
+                            )
+                        else:
+                            ingredient = Ingredient(
+                                ingredient_api_id=None,
+                                ingredient=ingredient_info
+                            )
 
                         self.session.add(ingredient)
                         self.session.commit()
@@ -167,136 +124,98 @@ class DBHandler:
                 print(f"Recipe with recipe_api_id {recipe_api_id} already exists.")
                 return existing_recipe  # Return existing recipe instead of adding a new one
 
-        # try:
-        #     # Insert a recipe into RECIPES table
-        #     self.cursor.execute('''
-        #             INSERT INTO RECIPES (
-        #                     recipe_api_id, title, prep_time, cook_time, total_cook_time, servings,
-        #                     image_url, favourite, original_recipe, instructions
-        #             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-        #         ''', (recipe_api_id, title, prep_time, cook_time, total_time, servings, image,
-        #               favourite, original_recipe, instructions,))
-        #
-        #     recipe_id = self.cursor.lastrowid
-        #
-        #     print(recipe_id)
-        #
-        #     self.conn.commit()
-        #     # self.close_connection()
-        #
-        #     return recipe_id
-        # except sq.IntegrityError as e:
-        #     print(f"Recipes ALREADY EXISTS: {recipe_api_id}")
-        #     pass
-
-    def insert_ingredient(self, ingredient_api_id, ingredient):
-        # Insert an ingredient into INGREDIENTS table
-        try:
-            self.cursor.execute('''
-                INSERT INTO INGREDIENTS (ingredient_api_id, ingredient) VALUES (?, ?);
-            ''', (ingredient_api_id, ingredient,))
-
-            ingredient_id = self.cursor.lastrowid
-
-            self.conn.commit()
-            # self.close_connection()
-
-            return ingredient_id
-        except sq.IntegrityError as e:
-            print(ingredient)
-            print("Duplicate ingredient")
-            pass
-
-    def link_recipe_and_ingredient(self, recipe_id, ingredient_id):
-        # Link a recipe and an ingredient in the recipes_ingredients table
-        self.cursor.execute('''
-            INSERT INTO recipes_ingredients (recipe_id, ingredient_id) VALUES (?, ?);
-        ''', (recipe_id, ingredient_id))
-
-        self.conn.commit()
-        # self.close_connection()
-
-    # def close_connection(self):
-    #     self.conn.close()
-
     def get_all_recipes(self):
-        recipes = self.session.query(Recipe).all()
+        # print("get all")
+        recipes = self.session.query(Recipe).filter_by(original_recipe=False, ).all()
         return recipes
 
     def get_all_favourite_recipes(self):
+        # print("get favs")
         recipes = self.session.query(Recipe).filter_by(favourite=True, ).all()
         return recipes
 
     def get_all_original_recipes(self):
+        # print("get originals")
         recipes = self.session.query(Recipe).filter_by(original_recipe=True, ).all()
         return recipes
 
-    def search_for_recipes(self, criteria, search_text):
+    def search_for_recipes(self, criteria, search_text, original, favs):
         print("SEARCHING")
         print(criteria)
         print(search_text)
-        # for c in criteria:
-        #     c = c.lower()
-        #     print(c)
-        #     if criteria == "Title":
-        #         pass
-        #     recipes = self.session.query(Recipe).filter_by(c=text).all()
-
-        # Create a base query
-        base_query = self.session.query(Recipe)
-
-        # Create aliases for the Recipe table to handle multiple criteria;
-        # Allows to refer to the same table with different names in a single query;
-        # useful when you want to join a table with itself or perform other operations
-        # where you need to treat the same table as distinct entities
-        recipe_alias = aliased(Recipe)
-        ingredient_alias = aliased(Ingredient)
 
         # Build the dynamic OR clause for each criterion
         or_clauses = []
+        and_clauses = []
 
         for criterion in criteria:
             if criterion == "title":
                 or_clauses.append(Recipe.title.ilike(f'%{search_text}%'))
             elif criterion == "ingredient":
                 # Assuming ingredients is a list of ingredient names
-                # or_clauses.append(ingredient_alias.ingredient.in_(search_text))
                 or_clauses.append(Ingredient.ingredient.ilike(f'%{search_text}%'))
-                # or_clauses.append(recipe_alias.ingredients.any(Ingredient.ingredient.in_(search_text)))
-                # or_clauses.append(recipe_alias.ingredients.any(Ingredient.ingredient.ilike(f'%{search_text}%')))
 
-            # elif criterion == "cuisine":
-            #     # Assuming cuisine is a string representing the cuisine type
-            #         or_clauses.append(recipe_alias.cuisine == cuisine)
+        if original:
+            and_clauses.append(Recipe.original_recipe == True)
+        elif favs:
+            and_clauses.append(Recipe.favourite == True)
+        else:
+            and_clauses.append(Recipe.original_recipe == False)
 
-            # field = getattr(recipe_alias, criterion)
-            # print(field)
-            # or_clauses.append(field.ilike(f"%{search_text}%"))
 
-        # Combine the OR clauses with an AND clause
-        combined_clause = or_(*or_clauses)
-        print(combined_clause)
+# Combine the OR clauses with an AND clause
+        or_combined_conditions = or_(*or_clauses)
+        and_combined_conditions = and_(*and_clauses)
+        final_combined_condition = and_(or_combined_conditions, and_combined_conditions)
 
         # Apply the dynamic clause to the base query
-        # recipes = base_query.join(recipe_alias).filter(combined_clause).all()
         recipes = (
             self.session.query(Recipe)
             .outerjoin(recipes_ingredients, Recipe.recipe_id == recipes_ingredients.c.recipe_id)
             .outerjoin(Ingredient, recipes_ingredients.c.ingredient_id == Ingredient.ingredient_id)
-            .filter(combined_clause)
+            .filter(final_combined_condition)
             .all()
         )
 
-        # print(recipes[0].title)
+        # print(recipes)
         return recipes
 
+    # Get the selected recipe from the recipe list
     def get_recipe(self, iid):
         recipe = self.session.query(Recipe).filter_by(recipe_api_id=iid, ).limit(1).first()
+        return recipe
+
+    # Get the original recipe selected from the recipe list
+    def get_original_recipe(self, title):
+        # print("GET ORIGINAL")
+        recipe = self.session.query(Recipe).filter_by(original_recipe=True, title=title).limit(1).first()
+        # print(recipe)
         return recipe
 
     def change_recipe_favourite_value(self, recipe):
         recipe.favourite = True if recipe.favourite is False else False
         self.session.commit()
+
+    # Delete an original recipe
+    def delete_recipe(self, title, instr):
+        # Retrieve the recipe with the specified title
+        recipe = self.session.query(Recipe).filter_by(original_recipe=True, title=title, instructions=instr, ).first()
+
+        if recipe:
+            # Delete the associated ingredients
+            for ingredient in recipe.ingredients:
+                self.session.delete(ingredient)
+
+            # Delete the recipe itself
+            self.session.delete(recipe)
+            self.session.commit()
+            print(f"Recipe with title '{title}' and associated ingredients deleted successfully.")
+        else:
+            print(f"No recipe found with title '{title}'.")
+
+    # Edit recipe information
+    def edit_recipe(self, recipe):
+        pass
 
     def drop_tables(self):
         try:

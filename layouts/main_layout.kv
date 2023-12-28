@@ -51,11 +51,43 @@
                 padding: 30
                 orientation: 'vertical'
 
+                MDBoxLayout:
+                    orientation: "horizontal"
+                    size_hint: None, None
+                    pos_hint: {"center_x": 0.85, "center_y": 0.5}
+                    height: dp(20)
+                    #padding: (0, 0, 0, 0)
+
+                    MDIconButton:
+                        id: edit_btn
+
+                        icon: "pencil"
+                        theme_icon_color: "Custom"
+                        icon_color: 0, 1, 0, 1
+                        pos_hint: {"right": 0.98, "center_y": 0.5}
+                        opacity: 1
+                        on_release: app.edit_recipe()
+                        disabled: False
+
+                    MDIconButton:
+                        id: delete_btn
+
+                        icon: "delete"
+                        theme_icon_color: "Custom"
+                        icon_color: 1, 0, 0, 1
+                        size_hint: None, None
+                        pos_hint: {"center_x": 0.98, "center_y": 0.5}
+                        opacity: 1
+                        on_release: app.delete_recipe()
+                        disabled: True
+
                 MDLabel:
                     id: recipe_title
-                    size_hint: 1, 0.30
+
+                    size_hint_y: 0.3
                     font_size: "30dp"
                     text: 'Title'
+                    pos_hint: {"center_x": 0.5, "center_y": 0.5}
 
                 MDLabel:
                     size_hint: 1, 0.1
@@ -81,11 +113,6 @@
                 MDBoxLayout:
                     orientation: 'vertical'
                     size_hint: 1, 1
-
-                   # MDLabel:
-                    #    id: recipe_descr
-                     #   text: 'Description'
-
 
                     MDLabel:
                         id: recipe_instr
@@ -185,7 +212,7 @@
                 size_hint: None, None
                 #size_hint_y: 1
                 #pos_hint: {'center_y': 0.5, 'right': 1}
-                on_release: app.done_add_edit_recipe()
+                #on_release: app.done_creating_editing_recipe()
 
         MDGridLayout:
             cols: 2
@@ -209,7 +236,7 @@
                     size_hint: 1, 0.1
 
                     MDLabel:
-                        id: recipe_title
+                        id: s2_recipe_title
 
                         text: 'Title'
                         #size_hint: 1, 0.30
@@ -217,6 +244,7 @@
                         font_size: dp(30)
 
                     MDTextField:
+                        id: s2_recipe_title_input
                         required: True
                         line_color_focus: "blue"
 
@@ -225,13 +253,13 @@
                     size_hint: 1, 0.1
 
                     MDLabel:
-                        id: recipe_servings
-
                         text: 'Servings'
                         #size_hint: 1, 0.1
                         size_hint_x: 0.5
 
                     MDTextField:
+                        id: s2_recipe_servings
+
                         #max_text_length: 2
                         line_color_focus: "blue"
 
@@ -241,12 +269,11 @@
                     size_hint: 1, 0.1
 
                     MDLabel:
-                        id: recipe_prep_time
-
                         text: 'Prep time'
                         size_hint_x: 0.5
 
                     MDTextField:
+                        id: s2_recipe_prep_time
                         max_text_length: 4
                         helper_text: "Time in minutes"
                         helper_text_mode: "on_focus"
@@ -257,12 +284,11 @@
                     size_hint: 1, 0.1
 
                     MDLabel:
-                        id: recipe_cook_time
-
                         text: 'Cook time'
                         size_hint_x: 0.5
 
                     MDTextField:
+                        id: s2_recipe_cook_time
                         max_text_length: 4
                         helper_text: "Time in minutes"
                         helper_text_mode: "on_focus"
@@ -273,12 +299,11 @@
                     size_hint: 1, 0.1
 
                     MDLabel:
-                        id: recipe_total_time
-
                         text: 'Total time'
                         size_hint_x: 0.5
 
                     MDTextField:
+                        id: s2_recipe_total_time
                         max_text_length: 4
                         helper_text_mode: "on_focus"
                         helper_text: "Time in minutes"
@@ -299,15 +324,13 @@
                          #   size: self.size
 
                     MDLabel:
-                        id: recipe_instr
-
                         size_hint_y: 0.3
                         #width: dp(30)
                         text: "Instructions"
 
                     MDScrollView:
                         MDTextField:
-                            id: edit_instr
+                            id: s2_recipe_instr
 
                             required: True
                             multiline: True
@@ -322,7 +345,7 @@
                 spacing: 30
 
                 Image:
-                    id: recipe_image_display
+                    id: s2_recipe_image_display
                     #source: app.image_source
                     size_hint: 1, None
                     pos_hint: {"center_x": 0.5, "top": 0.9}
@@ -340,14 +363,14 @@
                         #md_bg_color: (0, 0, 1, 1)
                         theme_text_color: "Custom"
                         text_color: app.theme_cls.primary_color
-                        on_release: app.show_file_chooser()
+                        on_release: root.show_image_chooser()
                         #on_release: app.select_image()
 
                     MDIconButton:
                         icon: "delete"
                         theme_text_color: "Custom"
                         text_color: app.theme_cls.primary_color
-                        #on_release: app.remove_image()
+                        #on_release: root.remove_image()
 
 
                 MDBoxLayout:
@@ -365,7 +388,7 @@
 
                     MDScrollView:
                         MDTextField:
-                            id: recipe_ingr
+                            id: s2_recipe_ingr
 
                             multiline: True
                             required: True
