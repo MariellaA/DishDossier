@@ -46,12 +46,18 @@ class ScreenOne(MDScreen):
     def __init__(self, **kwargs):
         super(ScreenOne, self).__init__(**kwargs)
 
-    def switch_on_delete_btn(self, on_off):
+    def switch_on_delete_edit_btn(self, on_off):
         if on_off is False:
-            self.ids.delete_btn.opacity = 0
             self.ids.delete_btn.disabled = True
+            self.ids.edit_btn.disabled = True
+
+            self.ids.delete_btn.opacity = 0
+            self.ids.edit_btn.opacity = 0
         elif on_off is True:
+            self.ids.edit_btn.opacity = 1
             self.ids.delete_btn.opacity = 1
+
+            self.ids.edit_btn.disabled = False
             self.ids.delete_btn.disabled = False
 
     def switch_screen(self):
@@ -136,7 +142,7 @@ class ScreenTwo(MDScreen):
         self.ids.s2_recipe_total_time.text = ""
         self.ids.s2_recipe_instr.text = ""
         self.ids.s2_recipe_image_display.source = ""
-        print(self.ids.s2_recipe_ingr.text.split('\n'))
+        # print(self.ids.s2_recipe_ingr.text.split('\n'))
         self.ids.s2_recipe_ingr.text = ""
 
         self.switch_screen()
@@ -166,14 +172,14 @@ class ScreenTwo(MDScreen):
         instr = self.ids.s2_recipe_instr.text
         # instr = self.root.ids.screen_two.ids.s2_recipe_instr.text.split('\n')
 
-        print(instr)
+        # print(instr)
 
         if self.ids.s2_recipe_image_display.source != "":
             image = self.ids.s2_recipe_image_display.source
         else:
             image = "img.png"
 
-        print(self.ids.s2_recipe_ingr.text.split("\n"))
+        # print(self.ids.s2_recipe_ingr.text.split("\n"))
         ingr = self.ids.s2_recipe_ingr.text.split("\n")
 
         if title == "" or instr == "" or ingr == "" or (title == "" and instr == "" and ingr == ""):
@@ -282,15 +288,20 @@ class DishDossierApp(MDApp):
         # print(self.root.ids.screen_one.ids)
         # print(instance.id)
         # print(type(instance.id))
-
-        if instance.id != "None":
-            # print("NOT NONE")
-            recipe = self.db.get_recipe(instance.id)
-        else:
-            # print("NONEEEE")
-            recipe = self.db.get_original_recipe(instance.text)
+        try:
+            if instance.id != "None":
+                # print("NOT NONE")
+                recipe = self.db.get_recipe(instance.id)
+            else:
+                # print("NONEEEE")
+                recipe = self.db.get_original_recipe(instance.text)
+        except AttributeError:
+                recipe = instance
 
         self.current_recipe = recipe
+
+        if self.current_recipe.original_recipe:
+            self.root.ids.screen_one.switch_on_delete_edit_btn(True)
 
         print(f"TITLE: {recipe.title}")
         self.root.ids.screen_one.set_recipe_info(recipe)
@@ -299,20 +310,23 @@ class DishDossierApp(MDApp):
         if list == "all_recipes":
             print("SELECT Sidebar")
             self.load_recipe_list_with_recipes(self.db.get_all_recipes())
-            self.root.ids.screen_one.switch_on_delete_btn(False)
+            self.root.ids.screen_one.switch_on_delete_edit_btn(False)
             self.root.ids.recipe_scroll.scroll_y = 1
+            self.on_recipe_select(self.root.ids.recipe_list.children[-1])
         elif list == "my_recipes":
             self.load_recipe_list_with_recipes(self.db.get_all_original_recipes())
-            self.root.ids.screen_one.switch_on_delete_btn(True)
+            if self.current_recipe.original_recipe:
+                self.root.ids.screen_one.switch_on_delete_edit_btn(True)
             self.root.ids.recipe_scroll.scroll_y = 1
         elif list == "favourites":
             print("SELECT Sidebar")
             self.load_recipe_list_with_recipes(self.db.get_all_favourite_recipes())
-            self.root.ids.screen_one.switch_on_delete_btn(False)
+            self.root.ids.screen_one.switch_on_delete_edit_btn(False)
             self.root.ids.recipe_scroll.scroll_y = 1
+            self.on_recipe_select(self.root.ids.recipe_list.children[-1])
 
         self.selected_recipe_list = list
-        self.on_recipe_select(self.root.ids.recipe_list.children[-1])
+
         # print(self.root.ids.recipe_list.children[-1].text)
 
     def search_for_recipe(self, look_for):
@@ -355,10 +369,13 @@ class DishDossierApp(MDApp):
         if scroll_y < 0.01:
             print(scroll_y)
             self.root.ids.show_more_btn.opacity = 1
+            self.root.ids.show_more_btn.disable = False
             # self.load_random_recipe()
             # print("Scrolled to the end.")
+
         elif scroll_y > 0.1:
             self.root.ids.show_more_btn.opacity = 0
+            self.root.ids.show_more_btn.disable = True
             # print("change opacity")
 
     def show_more_recipes(self):
@@ -367,7 +384,7 @@ class DishDossierApp(MDApp):
         self.root.ids.recipe_scroll.scroll_y = 1 - (1 / len(self.root.ids.recipe_list.children))
 
     # Save new/edited recipe
-    def done_creating_editing_recipe(self):
+    def done_creating_recipe(self):
         recipe_info = self.root.ids.screen_two.done_btn()
         print(recipe_info)
 
@@ -385,33 +402,43 @@ class DishDossierApp(MDApp):
     # Edit original recipe
     def edit_recipe(self):
         print("EDIIIIIIIIIIIIIIIT")
-        print(self.current_recipe.recipe_api_id)
-        print(self.current_recipe.recipe_id)
-        print(self.current_recipe.instructions)
-        print(self.current_recipe)
+        # print(self.current_recipe.recipe_api_id)
+        # print(self.current_recipe.recipe_id)
+        # print(self.current_recipe.instructions)
+        # print(self.current_recipe)
         self.switch_screen()
         recipe = self.current_recipe
 
-        recipe_data = [self.current_recipe.title, self.current_recipe.servings, self.current_recipe.prep_time,
-                       self.current_recipe.cook_time, self.current_recipe.total_cook_time, self.current_recipe.instructions,
-                       self.current_recipe.image_url, self.current_recipe.ingredients]
-        print(recipe_data)
+        recipe_data = [recipe.title, recipe.servings, recipe.prep_time,
+                       recipe.cook_time, recipe.total_cook_time, recipe.instructions,
+                       recipe.image_url, recipe.ingredients]
+        # print(recipe_data)
         self.root.ids.screen_two.show_edit_recipe_info(*recipe_data)
-        self.root.ids.screen_two.ids.add_done_btn.on_release = self.donee
-        # recipe = self.db.get_original_recipe(self.current_recipe.title)
-        # print(recipe)
-        #self.db.delete_recipe(self.current_recipe.title, self.current_recipe.instructions)
-        #self.on_recipe_list_select(self.selected_recipe_list)
 
-    def donee(self):
+        self.root.ids.screen_two.ids.add_done_btn.on_release = lambda: self.done_editing(recipe)
+
+    def done_editing(self, recipe):
         print("DHSHSHZHRSHSH")
+        # print(self.current_recipe.title)
+        print(recipe.title)
+        print("CURR RECIPE")
+        # print(self.current_recipe.instructions)
+        print(recipe.instructions)
+        new_recipe_info = self.root.ids.screen_two.done_btn()
+        # print(new_recipe_info)
+        print("NEW INFOOOOOO")
+        self.db.edit_recipe(recipe, new_recipe_info)
+        print(recipe.instructions)
+        self.root.ids.screen_two.cancel_add_edit_recipe()
+        self.on_recipe_list_select(self.selected_recipe_list)
+        self.on_recipe_select(recipe)
 
     def switch_screen(self):
         self.root.ids.screens.transition = NoTransition()
 
         if self.root.ids.screens.current == "screen_one":
             self.root.ids.screen_one.switch_screen()
-            self.root.ids.screen_two.ids.add_done_btn.on_release = self.done_creating_editing_recipe
+            self.root.ids.screen_two.ids.add_done_btn.on_release = self.done_creating_recipe
         else:
             self.root.ids.screen_two.switch_screen()
         print(self.root.ids.screens.current)

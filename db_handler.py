@@ -214,8 +214,27 @@ class DBHandler:
             print(f"No recipe found with title '{title}'.")
 
     # Edit recipe information
-    def edit_recipe(self, recipe):
-        pass
+    def edit_recipe(self, recipe, new_recipe_info):
+        recipe.title = new_recipe_info[1]
+        recipe.prep_time = new_recipe_info[2]
+        recipe.cook_time = new_recipe_info[3]
+        recipe.total_cook_time = new_recipe_info[4]
+        recipe.servings = new_recipe_info[5]
+        recipe.image_url = new_recipe_info[6]
+        recipe.instructions = new_recipe_info[9]
+
+        new_ingredients = []
+        for ingredient_name in new_recipe_info[10]:
+            ingredient = self.session.query(Ingredient).filter_by(ingredient=ingredient_name).first()
+
+            if not ingredient:
+                ingredient = Ingredient(ingredient=ingredient_name)
+
+            new_ingredients.append(ingredient)
+
+        recipe.ingredients = new_ingredients
+
+        self.session.commit()
 
     def drop_tables(self):
         try:
