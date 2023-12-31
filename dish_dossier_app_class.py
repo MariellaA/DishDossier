@@ -8,6 +8,7 @@ from kivy.uix.screenmanager import NoTransition
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
+from kivymd.uix.card import MDCard
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.label import MDLabel
 from kivymd.uix.menu import MDDropdownMenu
@@ -26,7 +27,7 @@ Config.set('graphics', 'resizable', False)
 
 from kivy.lang import Builder
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.image import Image
+from kivy.uix.image import Image, AsyncImage
 from kivymd.uix.list import OneLineAvatarListItem, MDList, IRightBodyTouch, OneLineListItem, OneLineAvatarIconListItem
 from recipe import Recipe
 
@@ -36,6 +37,35 @@ from recipe import Recipe
 
 class RecipeList(MDList):
     pass
+
+
+class RecipeCard(MDCard):
+    def __init__(self, **kwargs):
+        super(RecipeCard, self).__init__(**kwargs)
+    #     self.orientation = 'horizontal'
+    #     self.size_hint_y = None
+    #     self.height = dp(100)
+    #     self.spacing = dp(10)
+    #
+    #     self.image = AsyncImage(width=dp(100), size_hint_x=None, radius=24)
+    #     # self.image.radius = 24
+    #     # self.image.size_hint_x = None
+    #     # self.image.size_hint_x = None
+    #     self.title_button = MDFlatButton(text="",
+    #                                      size_hint_x=None,
+    #                                      width=dp(150),
+    #                                      theme_text_color="Custom",
+    #                                      text_color=(0.2392, 0.2196, 0.1725, 1),
+    #                                      pos_hint={"center_x": 0.5, "center_y": 0.5},
+    #                                      font_name="fonts/athiti/Athiti-SemiBold.ttf")
+    #     self.title_button.bind(on_release=self.on_card_press)
+    #
+    #     self.add_widget(self.image)
+    #     self.add_widget(self.title_button)
+    #
+    # def on_card_press(self, instance):
+    #     # Implement the action you want when the card is pressed
+    #     print(f"Recipe '{self.title_button.text}' pressed!")
 
 
 class RecipeItem(OneLineAvatarListItem):
@@ -67,12 +97,12 @@ class ScreenOne(MDScreen):
 
     def set_recipe_info(self, recipe):
         self.ids.recipe_title.text = recipe.title.upper()
-        self.ids.recipe_prep_time.text = f"Prep. time: {recipe.prep_time if recipe.prep_time != -1 else 'N/A'}"
-        self.ids.recipe_cook_time.text = f"Cook time: {recipe.cook_time if recipe.cook_time != -1 else 'N/A'}"
-        self.ids.recipe_total_time.text = f"Total time: {recipe.total_cook_time if recipe.total_cook_time != -1 else 'N/A'}"
-        self.ids.recipe_servings.text = f"Servings {recipe.servings if recipe.servings != -1 else 'N/A'}"
+        self.ids.recipe_prep_time.text = str(recipe.prep_time) if recipe.prep_time != -1 else 'n/a'
+        self.ids.recipe_cook_time.text = str(recipe.cook_time) if recipe.cook_time != -1 else 'n/a'
+        self.ids.recipe_total_time.text = str(recipe.total_cook_time) if recipe.total_cook_time != -1 else 'n/a'
+        self.ids.recipe_servings.text = str(recipe.servings) if recipe.servings != -1 else 'N/A'
         # self.ids.recipe_descr.text = recipe.description
-        self.ids.recipe_instr.text = f"Instructions:\n{recipe.instructions}"
+        self.ids.recipe_instr.text = recipe.instructions
 
         # Set Recipe Image and Ingredients
         self.ids.recipe_full_image.source = recipe.image_url if recipe.image_url else 'img_1.png'
@@ -85,7 +115,7 @@ class ScreenOne(MDScreen):
             self.ids.favs_button.icon = "heart-outline"
             self.ids.favs_label.text = "Add to Favourites"
 
-        res = "Ingredients:\n"
+        res = ""
         for ingredient in recipe.ingredients:
             res += f"{ingredient.ingredient}\n"
         self.ids.recipe_ingr.text = res
@@ -174,10 +204,12 @@ class ScreenTwo(MDScreen):
 
         # print(instr)
 
-        if self.ids.s2_recipe_image_display.source != "":
+        if self.ids.s2_recipe_image_display.source is not None:
             image = self.ids.s2_recipe_image_display.source
+            print("IMMGGGG")
         else:
             image = "img.png"
+            print("NO IMMMGGG IMG")
 
         # print(self.ids.s2_recipe_ingr.text.split("\n"))
         ingr = self.ids.s2_recipe_ingr.text.split("\n")
@@ -275,14 +307,13 @@ class DishDossierApp(MDApp):
         self.root.ids.recipe_list.clear_widgets()
 
         for recipe in recipes:
-            # recipe = recipe_list[i]
-            # print(recipe.title)
-            item = RecipeItem(id=str(recipe.recipe_api_id), text=recipe.title, size_hint_y=None, height=300)
+            recipe_card = RecipeCard(id=str(recipe.recipe_api_id),)
 
-            item.ids.recipe_img.source = recipe.image_url
-            item.bind(on_release=self.on_recipe_select)
+            recipe_card.ids.recipe_img.source = recipe.image_url
+            recipe_card.ids.recipe_title_btn.text = recipe.title
+            recipe_card.bind(on_release=self.on_recipe_select)
 
-            self.root.ids.recipe_list.add_widget(item)
+            self.root.ids.recipe_list.add_widget(recipe_card)
 
     def on_recipe_select(self, instance):
         # print(self.root.ids.screen_one.ids)
@@ -296,7 +327,7 @@ class DishDossierApp(MDApp):
                 # print("NONEEEE")
                 recipe = self.db.get_original_recipe(instance.text)
         except AttributeError:
-                recipe = instance
+            recipe = instance
 
         self.current_recipe = recipe
 
@@ -309,7 +340,7 @@ class DishDossierApp(MDApp):
     def on_recipe_list_select(self, list):
         if list == "all_recipes":
             print("SELECT Sidebar")
-            self.load_recipe_list_with_recipes(self.db.get_all_recipes())
+            self.load_recipe_list_with_recipes(self.db.get_recipes())
             self.root.ids.screen_one.switch_on_delete_edit_btn(False)
             self.root.ids.recipe_scroll.scroll_y = 1
             self.on_recipe_select(self.root.ids.recipe_list.children[-1])
@@ -386,7 +417,7 @@ class DishDossierApp(MDApp):
     # Save new/edited recipe
     def done_creating_recipe(self):
         recipe_info = self.root.ids.screen_two.done_btn()
-        print(recipe_info)
+        print(f"DONE RECIPE CREATING {recipe_info}")
 
         if recipe_info:
             self.db.add_recipe(*recipe_info)
@@ -565,11 +596,11 @@ class DishDossierApp(MDApp):
     #
     #     self.add_widget(self.recipe_list)
 
-    def switch_theme_style(self):
-        self.theme_cls.primary_palette = (
-            "Orange" if self.theme_cls.primary_palette == "Red" else "Red"
-        )
-        self.theme_cls.theme_style = (
-            "Dark" if self.theme_cls.theme_style == "Light" else "Light"
-        )
-        # self.text_color = ("#252526" if self.theme_cls.theme_style == "Light" else "#ebebeb")
+    # def switch_theme_style(self):
+    #     self.theme_cls.primary_palette = (
+    #         "Orange" if self.theme_cls.primary_palette == "Red" else "Red"
+    #     )
+    #     self.theme_cls.theme_style = (
+    #         "Dark" if self.theme_cls.theme_style == "Light" else "Light"
+    #     )
+    # self.text_color = ("#252526" if self.theme_cls.theme_style == "Light" else "#ebebeb")

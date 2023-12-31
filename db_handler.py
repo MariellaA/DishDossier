@@ -68,17 +68,18 @@ class DBHandler:
 
             # Add the Recipe to the database
             self.session.add(recipe)
-            self.session.commit()
-            print("ADDING")
+            # self.session.commit()
+            print("ADDING TO DB")
             print(ingredients_data)
 
             # Check for existing ingredients and add only new ones
             for ingredient_info in ingredients_data:
                 # TODO: When using the API check if relationship between new recipes with already
                 #  existing ingredients is added to recipes_ingredient; affects ingredient displaying
-                print(ingredient_info)
+                print(f"DB ADDING RECIPE INGR {ingredient_info}")
                 try:
                     if not original_recipe:
+                        print("Not original")
                         ingredient_api_id = ingredient_info['id']
                         ingredient = (
                             self.session.query(Ingredient)
@@ -86,11 +87,13 @@ class DBHandler:
                             .first()
                         )
                     else:
+                        print("Original")
                         ingredient = (
                             self.session.query(Ingredient).filter_by(ingredient=ingredient_info).first()
                         )
 
                     if not ingredient:
+                        print("Ingr doestnt exist")
                         if not original_recipe:
                             ingredient = Ingredient(
                                 ingredient_api_id=ingredient_info['id'],
@@ -98,13 +101,14 @@ class DBHandler:
                                 ingredient_info['original']
                             )
                         else:
+                            print("making ingredients for original recipe")
                             ingredient = Ingredient(
                                 ingredient_api_id=None,
                                 ingredient=ingredient_info
                             )
-
+                        print(f"NEW INGREDIENT: {ingredient}")
                         self.session.add(ingredient)
-                        self.session.commit()
+                        # self.session.commit()
 
                     recipe.ingredients.append(ingredient)
                     self.session.commit()
@@ -124,7 +128,7 @@ class DBHandler:
                 print(f"Recipe with recipe_api_id {recipe_api_id} already exists.")
                 return existing_recipe  # Return existing recipe instead of adding a new one
 
-    def get_all_recipes(self):
+    def get_recipes(self):
         # print("get all")
         recipes = self.session.query(Recipe).filter_by(original_recipe=False, ).all()
         return recipes
