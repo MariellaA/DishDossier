@@ -49,6 +49,12 @@ class DBHandler:
     def create_tables(self):
         Base.metadata.create_all(bind=self.engine)
 
+    # def get_page_recipes(self, offset, page_size):
+    #     # Query the database for the next batch of recipes
+    #     recipes = self.session.query(Recipe).offset(offset).limit(page_size).all()
+    #
+    #     return recipes
+
     def add_recipe(self, recipe_api_id, title, prep_time, cook_time, total_cook_time,
                    servings, image_url, favourite, original_recipe, instructions, ingredients_data):
         try:
@@ -128,19 +134,19 @@ class DBHandler:
                 print(f"Recipe with recipe_api_id {recipe_api_id} already exists.")
                 return existing_recipe  # Return existing recipe instead of adding a new one
 
-    def get_recipes(self):
+    def get_recipes(self, offset, page_size):
         # print("get all")
-        recipes = self.session.query(Recipe).filter_by(original_recipe=False, ).all()
+        recipes = self.session.query(Recipe).filter_by(original_recipe=False, ).offset(offset).limit(page_size).all()
         return recipes
 
-    def get_all_favourite_recipes(self):
+    def get_all_favourite_recipes(self, offset, page_size):
         # print("get favs")
-        recipes = self.session.query(Recipe).filter_by(favourite=True, ).all()
+        recipes = self.session.query(Recipe).filter_by(favourite=True, ).offset(offset).limit(page_size).all()
         return recipes
 
-    def get_all_original_recipes(self):
+    def get_all_original_recipes(self, offset, page_size):
         # print("get originals")
-        recipes = self.session.query(Recipe).filter_by(original_recipe=True, ).all()
+        recipes = self.session.query(Recipe).filter_by(original_recipe=True, ).offset(offset).limit(page_size).all()
         return recipes
 
     def search_for_recipes(self, criteria, search_text, original, favs):

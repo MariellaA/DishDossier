@@ -114,7 +114,7 @@
                     id: recipe_title
 
                     size_hint_y: 0.4
-                    font_size: dp(30)
+                    font_size: dp(34)
                     #text: 'Title'
 
                     theme_text_color: "Custom"
@@ -233,19 +233,20 @@
                         size_hint_y: None
                         text: "Instructions"
                         theme_text_color: "Custom"
-                        font_name: "fonts/athiti/Athiti-Medium.ttf"
+                        font_name: "fonts/athiti/Athiti-SemiBold.ttf"
                         text_color: (0.1176, 0.1176, 0.1176, 1)
                         #height: dp(30)
                         pos_hint: {"bottom": 0.9}
-                        #font_size: dp(18)
-                        bold: True
+                        font_size: dp(19)
+
 
                     MDScrollView:
                         MDLabel:
                             id: recipe_instr
+
                             theme_text_color: "Custom"
                             text_color: (0.1176, 0.1176, 0.1176, 1)
-                            font_name: "fonts/athiti/Athiti-Regular.ttf"
+                            font_name: "fonts/athiti/Athiti-Medium.ttf"
                             size_hint_y: None
                             height: self.texture_size[1]
                             #adaptive_height: True
@@ -315,7 +316,7 @@
                             size_hint_y: None
                             height: self.texture_size[1]
                             #adaptive_height: True
-                            font_name: "fonts/athiti/Athiti-Regular.ttf"
+                            font_name: "fonts/athiti/Athiti-Medium.ttf"
                             theme_text_color: "Custom"
                             text_color: (0.1176, 0.1176, 0.1176, 1)
                             padding: dp(10)
@@ -342,26 +343,31 @@
                 spacing: 30
 
                 MDRaisedButton:
+                    id: add_done_btn
+
+                    text: "Done"
+                    md_bg_color: (0.65098, 0.35294, 0, 1)
+                    size_hint: None, None
+                    theme_text_color: "Custom"
+                    font_name: "fonts/athiti/Athiti-SemiBold.ttf"
+                    text_color: (0.9569, 0.9569, 0.9569, 1)
+                    #pos_hint: {'center_y': 0.5, 'right': 1}
+                    #on_release: app.done_creating_editing_recipe()
+
+                Widget:  # Empty widget to create spacing
+
+                MDRaisedButton:
                     id: add_cancel_btn
 
                     text: "Cancel"
                     #size_hint_y: 1
                     #pos_hint: {'center_x': 0.5, 'center_y': 0.5}
                     md_bg_color: (1, 0.1, 0.1, 0.8)
+
+                    theme_text_color: "Custom"
                     font_name: "fonts/athiti/Athiti-SemiBold.ttf"
+                    text_color: (0.9569, 0.9569, 0.9569, 1)
                     on_release: root.cancel_add_edit_recipe()
-
-                Widget:  # Empty widget to create spacing
-
-                MDRaisedButton:
-                    id: add_done_btn
-
-                    text: "Done"
-                    md_bg_color: (0.9725, 0.902, 0.7333, 1)
-                    size_hint: None, None
-                    font_name: "fonts/athiti/Athiti-SemiBold.ttf"
-                    #pos_hint: {'center_y': 0.5, 'right': 1}
-                    #on_release: app.done_creating_editing_recipe()
 
         MDCard:
             elevation: 15
@@ -402,30 +408,34 @@
                             MDLabel:
                                 id: s2_recipe_title
 
-                                text: 'Title'
-                                #size_hint: 1, 0.30
                                 size_hint_x: 0.5
-                                font_size: dp(25)
+
+                                text: 'Title'
+                                font_size: dp(34)
                                 font_name: "fonts/athiti/Athiti-SemiBold.ttf"
                                 theme_text_color: "Custom"
                                 text_color: (0.1176, 0.1176, 0.1176, 1)
 
                             MDTextField:
                                 id: s2_recipe_title_input
+
                                 required: True
+
+                                hint_text: "Add title here"
+
                                 font_name: "fonts/athiti/Athiti-Regular.ttf"
                                 theme_text_color: "Custom"
                                 text_color: (0.1176, 0.1176, 0.1176, 1)
-                                line_color_focus: (0.65098, 0.35294, 0, 1)
 
                         MDGridLayout:
                             cols: 2
                             size_hint: 1, 0.1
 
                             MDLabel:
-                                text: 'Servings'
-                                #size_hint: 1, 0.1
                                 size_hint_x: 0.5
+                                font_size: dp(19)
+
+                                text: 'Servings'
                                 font_name: "fonts/athiti/Athiti-SemiBold.ttf"
                                 theme_text_color: "Custom"
                                 text_color: (0.1176, 0.1176, 0.1176, 1)
@@ -436,7 +446,11 @@
                                 font_name: "fonts/athiti/Athiti-Regular.ttf"
                                 theme_text_color: "Custom"
                                 text_color: (0.1176, 0.1176, 0.1176, 1)
-                                #max_text_length: 2
+
+                                hint_text: "Add number of servings here"
+                                hint_text_color_normal: (0.1176, 0.1176, 0.1176, 0.6)
+                                hint_text_color_focus: (0.1176, 0.1176, 0.1176, 1)
+
                                 line_color_focus: (0.65098, 0.35294, 0, 1)
 
 
@@ -445,17 +459,23 @@
                             size_hint: 1, 0.1
 
                             MDLabel:
-                                text: 'Prep time'
                                 size_hint_x: 0.5
+
+                                text: 'Prep time'
                                 font_name: "fonts/athiti/Athiti-SemiBold.ttf"
+                                font_size: dp(19)
                                 theme_text_color: "Custom"
                                 text_color: (0.1176, 0.1176, 0.1176, 1)
 
                             MDTextField:
                                 id: s2_recipe_prep_time
+
                                 max_text_length: 4
-                                helper_text: "Time in minutes"
-                                helper_text_mode: "on_focus"
+
+                                hint_text: "Add prep time in minutes here"
+                                hint_text_color_normal: (0.1176, 0.1176, 0.1176, 0.6)
+                                hint_text_color_focus: (0.1176, 0.1176, 0.1176, 1)
+
                                 line_color_focus: (0.65098, 0.35294, 0, 1)
 
                                 font_name: "fonts/athiti/Athiti-Regular.ttf"
@@ -467,18 +487,23 @@
                             size_hint: 1, 0.1
 
                             MDLabel:
-                                text: 'Cook time'
                                 size_hint_x: 0.5
+
+                                text: 'Cook time'
+                                font_size: dp(19)
                                 font_name: "fonts/athiti/Athiti-SemiBold.ttf"
                                 theme_text_color: "Custom"
                                 text_color: (0.1176, 0.1176, 0.1176, 1)
 
                             MDTextField:
                                 id: s2_recipe_cook_time
+
                                 max_text_length: 4
-                                helper_text: "Time in minutes"
-                                helper_text_mode: "on_focus"
-                                line_color_focus: "blue"
+
+                                hint_text: "Add cook time in minutes here"
+                                hint_text_color_normal: (0.1176, 0.1176, 0.1176, 0.6)
+                                hint_text_color_focus: (0.1176, 0.1176, 0.1176, 1)
+
                                 font_name: "fonts/athiti/Athiti-Regular.ttf"
                                 theme_text_color: "Custom"
                                 text_color: (0.1176, 0.1176, 0.1176, 1)
@@ -489,17 +514,23 @@
                             size_hint: 1, 0.1
 
                             MDLabel:
-                                text: 'Total time'
                                 size_hint_x: 0.5
+
+                                text: 'Total time'
+                                font_size: dp(19)
                                 font_name: "fonts/athiti/Athiti-SemiBold.ttf"
                                 theme_text_color: "Custom"
                                 text_color: (0.1176, 0.1176, 0.1176, 1)
 
                             MDTextField:
                                 id: s2_recipe_total_time
+
                                 max_text_length: 4
-                                helper_text_mode: "on_focus"
-                                helper_text: "Time in minutes"
+
+                                hint_text: "Add total preparation time in minutes here"
+                                hint_text_color_normal: (0.1176, 0.1176, 0.1176, 0.6)
+                                hint_text_color_focus: (0.1176, 0.1176, 0.1176, 1)
+
                                 line_color_focus: (0.65098, 0.35294, 0, 1)
 
                                 font_name: "fonts/athiti/Athiti-Regular.ttf"
@@ -523,7 +554,9 @@
                             MDLabel:
                                 size_hint_y: 0.3
                                 #width: dp(30)
+
                                 text: "Instructions"
+                                font_size: dp(19)
                                 font_name: "fonts/athiti/Athiti-SemiBold.ttf"
                                 theme_text_color: "Custom"
                                 text_color: (0.1176, 0.1176, 0.1176, 1)
@@ -534,11 +567,13 @@
 
                                     required: True
                                     multiline: True
-                                    line_color_focus: (0.1176, 0.1176, 0.1176, 1)
+
+                                    #line_color_focus: (0.1176, 0.1176, 0.1176, 1)
+                                    hint_text: "Add instructions here"
+
                                     font_name: "fonts/athiti/Athiti-Regular.ttf"
                                     theme_text_color: "Custom"
                                     text_color: (0.1176, 0.1176, 0.1176, 1)
-                                    line_color_focus: (0.65098, 0.35294, 0, 1)
 
                     MDBoxLayout:
                         orientation: 'vertical'
@@ -557,12 +592,12 @@
 
                         Image:
                             id: s2_recipe_image_display
+
                             #source: app.image_source
                             size_hint: 1, None
                             pos_hint: {"center_x": 0.5, "top": 0.9}
                             width: "400dp"
                             height: "217dp"
-                            #allow_stretch: True
                             radius: 24
 
                             canvas.before:
@@ -607,11 +642,12 @@
                             spacing: 30
 
                             MDLabel:
-                                text: "Ingredients"
                                 size_hint_y: None
+
+                                text: "Ingredients"
                                 font_name: "fonts/athiti/Athiti-SemiBold.ttf"
+                                font_size: dp(19)
                                 theme_text_color: "Custom"
-                                font_size: dp(18)
                                 text_color: (0.1176, 0.1176, 0.1176, 1)
 
                             MDScrollView:
@@ -620,10 +656,12 @@
 
                                     multiline: True
                                     required: True
+
+                                    hint_text: "Add cook time in minutes here"
+
                                     font_name: "fonts/athiti/Athiti-Regular.ttf"
                                     theme_text_color: "Custom"
                                     text_color: (0.1176, 0.1176, 0.1176, 1)
-                                    line_color_focus: (0.65098, 0.35294, 0, 1)
 
 DishDossierController:
     orientation: 'horizontal'
@@ -777,7 +815,7 @@ DishDossierController:
                 MDScrollView:
                     id:recipe_scroll
                     padding: 50
-                    on_scroll_stop: app.on_scroll_stop(self.scroll_y)
+                    on_scroll_stop: app.show_show_more_btn(self.scroll_y)
 
                     RecipeList:
                         id: recipe_list
@@ -791,6 +829,8 @@ DishDossierController:
                     text: "Show more"
                     opacity: 0
                     pos_hint: {"center_x": .5}
+                    md_bg_color: (0.65098, 0.35294, 0, 1)
+                    font_name: "fonts/athiti/Athiti-Medium.ttf"
                     on_release: app.show_more_recipes()
 
 

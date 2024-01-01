@@ -155,7 +155,6 @@ class ScreenTwo(MDScreen):
 
     # Delete image:
     def remove_image(self):
-        # TODO: This does not show how the image is removed
         self.ids.s2_recipe_image_display.source = ""
         self.ids.s2_recipe_image_display.reload()
 
@@ -255,13 +254,16 @@ class DishDossierApp(MDApp):
 
         self.current_recipe = None
         # self.menu = None
-        self.dialog = None
+        self.search_menu = None
         self.search_selection = []
+
+        self.current_page = 0
+        self.page_size = 6
 
     def build(self):
         Window.size = (1280, 720)
         self.theme_cls.theme_style = "Dark"
-        self.theme_cls.primary_palette = "Orange"
+        # self.theme_cls.primary_palette = "Orange"
         self.theme_cls.primary_hue = "200"  # "500"
         self.theme_cls.theme_style_switch_animation = True
         self.theme_cls.theme_style_switch_animation_duration = 0.8
@@ -304,16 +306,36 @@ class DishDossierApp(MDApp):
         # recipes = self.db.get_all_recipes()
         print(f"ALL RECIPES:\n {recipes}")
 
-        self.root.ids.recipe_list.clear_widgets()
+        # self.root.ids.recipe_list.clear_widgets()
 
-        for recipe in recipes:
-            recipe_card = RecipeCard(id=str(recipe.recipe_api_id),)
+        if not recipes:
+            print("No more recipes left.")
+            self.root.ids.show_more_btn.opacity = 0
+            self.root.ids.show_more_btn.disable = True
+        else:
+            # Display the recipes (customize this part based on your UI)
+            for recipe in recipes:
+                print(recipe)
 
-            recipe_card.ids.recipe_img.source = recipe.image_url
-            recipe_card.ids.recipe_title_btn.text = recipe.title
-            recipe_card.bind(on_release=self.on_recipe_select)
+                recipe_card = RecipeCard(id=str(recipe.recipe_api_id), )
 
-            self.root.ids.recipe_list.add_widget(recipe_card)
+                recipe_card.ids.recipe_img.source = recipe.image_url
+                recipe_card.ids.recipe_title_btn.text = recipe.title
+                recipe_card.bind(on_release=self.on_recipe_select)
+
+                self.root.ids.recipe_list.add_widget(recipe_card)
+
+            # Update the current page
+            self.current_page += 1
+
+        # for recipe in recipes:
+        #     recipe_card = RecipeCard(id=str(recipe.recipe_api_id),)
+        #
+        #     recipe_card.ids.recipe_img.source = recipe.image_url
+        #     recipe_card.ids.recipe_title_btn.text = recipe.title
+        #     recipe_card.bind(on_release=self.on_recipe_select)
+        #
+        #     self.root.ids.recipe_list.add_widget(recipe_card)
 
     def on_recipe_select(self, instance):
         # print(self.root.ids.screen_one.ids)
@@ -338,27 +360,42 @@ class DishDossierApp(MDApp):
         self.root.ids.screen_one.set_recipe_info(recipe)
 
     def on_recipe_list_select(self, list):
+        if self.selected_recipe_list != list:
+            self.root.ids.recipe_list.clear_widgets()
+            self.current_page = 0
+            self.root.ids.recipe_scroll.scroll_y = 1
+            self.show_show_more_btn(self.root.ids.recipe_scroll.scroll_y)
+
+        # Calculate the offset for pagination
+        offset = self.current_page * self.page_size
+
         if list == "all_recipes":
             print("SELECT Sidebar")
-            self.load_recipe_list_with_recipes(self.db.get_recipes())
+
+            self.load_recipe_list_with_recipes(self.db.get_recipes(offset, self.page_size))
             self.root.ids.screen_one.switch_on_delete_edit_btn(False)
-            self.root.ids.recipe_scroll.scroll_y = 1
-            self.on_recipe_select(self.root.ids.recipe_list.children[-1])
+
+            try:
+                self.on_recipe_select(self.root.ids.recipe_list.children[-1])
+            except IndexError:
+                pass
         elif list == "my_recipes":
-            self.load_recipe_list_with_recipes(self.db.get_all_original_recipes())
+            self.load_recipe_list_with_recipes(self.db.get_all_original_recipes(offset, self.page_size))
+
             if self.current_recipe.original_recipe:
                 self.root.ids.screen_one.switch_on_delete_edit_btn(True)
-            self.root.ids.recipe_scroll.scroll_y = 1
+
         elif list == "favourites":
             print("SELECT Sidebar")
-            self.load_recipe_list_with_recipes(self.db.get_all_favourite_recipes())
+            self.load_recipe_list_with_recipes(self.db.get_all_favourite_recipes(offset, self.page_size))
             self.root.ids.screen_one.switch_on_delete_edit_btn(False)
-            self.root.ids.recipe_scroll.scroll_y = 1
-            self.on_recipe_select(self.root.ids.recipe_list.children[-1])
+
+            try:
+                self.on_recipe_select(self.root.ids.recipe_list.children[-1])
+            except IndexError:
+                pass
 
         self.selected_recipe_list = list
-
-        # print(self.root.ids.recipe_list.children[-1].text)
 
     def search_for_recipe(self, look_for):
         print(f"Searched str: {look_for}")
@@ -396,23 +433,48 @@ class DishDossierApp(MDApp):
         if not self.current_recipe.favourite:
             self.on_recipe_list_select(self.selected_recipe_list)
 
-    def on_scroll_stop(self, scroll_y):
-        if scroll_y < 0.01:
-            print(scroll_y)
-            self.root.ids.show_more_btn.opacity = 1
-            self.root.ids.show_more_btn.disable = False
-            # self.load_random_recipe()
-            # print("Scrolled to the end.")
-
-        elif scroll_y > 0.1:
+    def show_show_more_btn(self, scroll_y):
+        # print(scroll_y)
+        if scroll_y > 0.01 or not self.check_if_there_are_more_recipes_to_show():
             self.root.ids.show_more_btn.opacity = 0
             self.root.ids.show_more_btn.disable = True
-            # print("change opacity")
+            return
+
+        elif scroll_y < 0.01:
+            self.root.ids.show_more_btn.opacity = 1
+            self.root.ids.show_more_btn.disable = False
+
+        # elif scroll_y > 0.01:
+        #     self.root.ids.show_more_btn.opacity = 0
+        #     self.root.ids.show_more_btn.disable = True
+
+    def check_if_there_are_more_recipes_to_show(self):
+        offset = self.current_page * self.page_size
+        recipes = False
+
+        if self.selected_recipe_list == "all_recipes":
+            recipes = self.db.get_recipes(offset, self.page_size)
+        elif self.selected_recipe_list == "my_recipes":
+            recipes = self.db.get_all_original_recipes(offset, self.page_size)
+        elif self.selected_recipe_list == "favourites":
+            recipes = self.db.get_all_favourite_recipes(offset, self.page_size)
+
+        if recipes:
+            return True
+
+        # print(f"CHECKING {True if recipes else False}")
+        return False
 
     def show_more_recipes(self):
-        # print("show more")
+        print("show more")
+        recipes_num = len(self.root.ids.recipe_list.children)
+
         self.on_recipe_list_select(self.selected_recipe_list)
-        self.root.ids.recipe_scroll.scroll_y = 1 - (1 / len(self.root.ids.recipe_list.children))
+        print(len(self.root.ids.recipe_list.children))
+
+        # print(1 - (1 / recipes_num * (len(self.root.ids.recipe_list.children) - 2)))
+        self.root.ids.recipe_scroll.scroll_y = 1 - (1 / recipes_num * (recipes_num - 1.5))
+        self.show_show_more_btn(self.root.ids.recipe_scroll.scroll_y)
 
     # Save new/edited recipe
     def done_creating_recipe(self):
@@ -475,8 +537,8 @@ class DishDossierApp(MDApp):
         print(self.root.ids.screens.current)
 
     def show_search_by_options(self):
-        if not self.dialog:
-            self.dialog = MDDialog(
+        if not self.search_menu:
+            self.search_menu = MDDialog(
                 title="Choose search method",
                 type="confirmation",
                 items=[
@@ -504,13 +566,13 @@ class DishDossierApp(MDApp):
             )
 
             # Set searching by title to be a default
-            self.dialog.items[0].ids.check.active = True
-            self.dialog.items[0].ids.check.theme_text_color = "Custom"
-            self.dialog.items[0].ids.check.text_color = self.theme_cls.primary_color
-            self.dialog.items[0].state = "down"
-            self.ok_search_by_menu(self.dialog)
+            self.search_menu.items[0].ids.check.active = True
+            self.search_menu.items[0].ids.check.theme_text_color = "Custom"
+            self.search_menu.items[0].ids.check.text_color = self.theme_cls.primary_color
+            self.search_menu.items[0].state = "down"
+            self.ok_search_by_menu(self.search_menu)
 
-        self.dialog.open()
+        self.search_menu.open()
 
     # Check if clicked outside the dialog
     def check_touch_outside(self, instance, touch):
@@ -524,14 +586,14 @@ class DishDossierApp(MDApp):
     # Closes the dialog without saving the changes
     def close_search_by_menu(self, instance):
 
-        for i in range(len(self.dialog.items)):
-            current_child_state = self.dialog.items[i].state
-            current_child_active = self.dialog.items[i].ids.check.active
+        for i in range(len(self.search_menu.items)):
+            current_child_state = self.search_menu.items[i].state
+            current_child_active = self.search_menu.items[i].ids.check.active
 
             if (current_child_state != self.search_selection[i][1] or
                     current_child_active != self.search_selection[i][2]):
-                self.dialog.items[i].state = self.search_selection[i][1]
-                self.dialog.items[i].ids.check.active = self.search_selection[i][2]
+                self.search_menu.items[i].state = self.search_selection[i][1]
+                self.search_menu.items[i].ids.check.active = self.search_selection[i][2]
                 # print("CLOSE")
                 # print(current_child_state)
                 # print(current_child_active)
@@ -541,19 +603,19 @@ class DishDossierApp(MDApp):
             # print(self.dialog.items[i].state)
             # print(self.dialog.items[i].ids.check.active)
 
-        self.dialog.dismiss()
+        self.search_menu.dismiss()
 
     # Closes the dialog and saves the changes
     def ok_search_by_menu(self, instance):
         self.search_selection = []
 
-        if not list(filter(lambda x: x.ids.check.active is True, self.dialog.items)):
+        if not list(filter(lambda x: x.ids.check.active is True, self.search_menu.items)):
             # print("NOt ONE TRUE")
-            self.dialog.items[0].ids.check.active = True
-            self.dialog.items[0].state = "down"
+            self.search_menu.items[0].ids.check.active = True
+            self.search_menu.items[0].state = "down"
             # return
 
-        for child in self.dialog.items:
+        for child in self.search_menu.items:
             # print("OKOKOKOK")
             # print(child.state)
             # print(child.ids.check.active)
@@ -567,14 +629,14 @@ class DishDossierApp(MDApp):
             # print(child.ids.check.active)
             self.search_selection.append((child.text.lower(), child.state, child.ids.check.active))
             # print(self.dialog_selection)
-        self.dialog.dismiss()
+        self.search_menu.dismiss()
 
     def toggle_button_callback(self, instance):
         # instance.selected = not instance.selected
         print(instance.ids)
         print("cheeck")
         print("SHIIIIIIIIIT")
-        self.dialog.dismiss()
+        self.search_menu.dismiss()
 
     # def filter_callback(self, criterion, active):
     #     if active:
