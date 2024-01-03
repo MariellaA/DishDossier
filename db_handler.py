@@ -28,7 +28,13 @@ class Recipe(Base):
     favourite = Column(Boolean, default=False)
     original_recipe = Column(Boolean, default=False)
     instructions = Column(Text)
-    ingredients = relationship('Ingredient', secondary=recipes_ingredients)  # , cascade='all, delete-orphan)
+    cuisine = Column(Text)
+    food_category = Column(Text)
+    vegan = Column(Boolean, default=False)
+    vegetarian = Column(Boolean, default=False)
+    gluten_free = Column(Boolean, default=False)
+    dairy_free = Column(Boolean, default=False)
+    ingredients = relationship('Ingredient', secondary=recipes_ingredients, cascade='all')
 
 
 class Ingredient(Base):
@@ -56,7 +62,8 @@ class DBHandler:
     #     return recipes
 
     def add_recipe(self, recipe_api_id, title, prep_time, cook_time, total_cook_time,
-                   servings, image_url, favourite, original_recipe, instructions, ingredients_data):
+                   servings, image_url, favourite, original_recipe, instructions, cuisine,
+                   food_category, vegan, vegetarian, gluten_free, dairy_free, ingredients_data):
         try:
             # Create a Recipe object
             recipe = Recipe(
@@ -69,7 +76,13 @@ class DBHandler:
                 image_url=image_url,
                 favourite=favourite,
                 original_recipe=original_recipe,
-                instructions=instructions
+                instructions=instructions,
+                cuisine=cuisine,
+                food_category=food_category,
+                vegan=vegan,
+                vegetarian=vegetarian,
+                gluten_free=gluten_free,
+                dairy_free=dairy_free,
             )
 
             # Add the Recipe to the database
@@ -80,8 +93,6 @@ class DBHandler:
 
             # Check for existing ingredients and add only new ones
             for ingredient_info in ingredients_data:
-                # TODO: When using the API check if relationship between new recipes with already
-                #  existing ingredients is added to recipes_ingredient; affects ingredient displaying
                 print(f"DB ADDING RECIPE INGR {ingredient_info}")
                 try:
                     if not original_recipe:
@@ -160,20 +171,39 @@ class DBHandler:
 
         for criterion in criteria:
             if criterion == "title":
+                print("title")
                 or_clauses.append(Recipe.title.ilike(f'%{search_text}%'))
             elif criterion == "ingredient":
-                # Assuming ingredients is a list of ingredient names
+                print("ingr")
+                # Ingredients is a list of ingredient names
                 or_clauses.append(Ingredient.ingredient.ilike(f'%{search_text}%'))
+            elif criterion == "cuisine":
+                print("cuss")
+                or_clauses.append(Recipe.cuisine.ilike(f'%{search_text}%'))
+            elif criterion == "category":
+                print("cattt")
+                or_clauses.append(Recipe.food_category.ilike(f'%{search_text}%'))
+            elif criterion == "vegan":
+                print("vegaan")
+                and_clauses.append(Recipe.vegan)
+            elif criterion == "dairy-free":
+                print("D FFFFF")
+                and_clauses.append(Recipe.dairy_free)
+            elif criterion == "gluten-free":
+                print("GFFFFF")
+                and_clauses.append(Recipe.gluten_free)
+            elif criterion == "vegetarian":
+                print("VEEEEG")
+                and_clauses.append(Recipe.vegetarian)
 
         if original:
-            and_clauses.append(Recipe.original_recipe == True)
+            and_clauses.append(Recipe.original_recipe)
         elif favs:
-            and_clauses.append(Recipe.favourite == True)
+            and_clauses.append(Recipe.favourite)
         else:
-            and_clauses.append(Recipe.original_recipe == False)
+            and_clauses.append(Recipe.original_recipe)
 
-
-# Combine the OR clauses with an AND clause
+        # Combine the OR clauses with an AND clause
         or_combined_conditions = or_(*or_clauses)
         and_combined_conditions = and_(*and_clauses)
         final_combined_condition = and_(or_combined_conditions, and_combined_conditions)
@@ -224,17 +254,25 @@ class DBHandler:
             print(f"No recipe found with title '{title}'.")
 
     # Edit recipe information
-    def edit_recipe(self, recipe, new_recipe_info):
-        recipe.title = new_recipe_info[1]
-        recipe.prep_time = new_recipe_info[2]
-        recipe.cook_time = new_recipe_info[3]
-        recipe.total_cook_time = new_recipe_info[4]
-        recipe.servings = new_recipe_info[5]
-        recipe.image_url = new_recipe_info[6]
-        recipe.instructions = new_recipe_info[9]
+    # def edit_recipe(self, recipe, new_recipe_info):
+    def edit_recipe(self, recipe, r_id, title, prep_t, cook_t, total_t, servings, image, fav, original, instr, cuisine,
+                    food_category, vegan, vegetarian, gluten_free, dairy_free, ingr):
+        recipe.title = title
+        recipe.prep_time = prep_t
+        recipe.cook_time = cook_t
+        recipe.total_cook_time = total_t
+        recipe.servings = servings
+        recipe.image_url = image
+        recipe.cuisine = cuisine
+        recipe.food_category = food_category
+        recipe.vegan = vegan
+        recipe.dairy_free = dairy_free
+        recipe.gluten_free = gluten_free
+        recipe.vegetarian = vegetarian
+        recipe.instructions = instr
 
         new_ingredients = []
-        for ingredient_name in new_recipe_info[10]:
+        for ingredient_name in ingr:
             ingredient = self.session.query(Ingredient).filter_by(ingredient=ingredient_name).first()
 
             if not ingredient:
@@ -246,46 +284,13 @@ class DBHandler:
 
         self.session.commit()
 
-    def drop_tables(self):
-        try:
-            # Drop tables in reverse order to avoid foreign key constraints
-            self.cursor.execute('DROP TABLE IF EXISTS recipes_ingredients;')
-            self.cursor.execute('DROP TABLE IF EXISTS recipes;')
-            self.cursor.execute('DROP TABLE IF EXISTS ingredients;')
-
-        finally:
-            self.conn.commit()
-            self.conn.close()
-
-
-# # Commit the changes
-# conn.commit()
-#
-# # Close the connection
-# conn.close()
-
-
-# def add_to_database():
-#     # Connect to the database
-#     conn = sq.connect("dish_dossier_db.db")
-#
-#     # Create a cursor
-#     cur = conn.cursor()
-#     cur.execute("""INSERT INTO recipes VALUES (:title, :prep_time, :cook_time, :total_cook_time, :servings, :image_url,
-#                     :fav, :original, :instructions, :description, :ingredients, :nutrition)
-#                     {
-#                         'title':
-#                     }
-#                     """)
-#
-#     # Add a record
-#
-#     # Commit the changes
-#     conn.commit()
-#
-#     # Close the connection
-#     conn.close()
-
-
-def show_data():
-    pass
+    # def drop_tables(self):
+    #     try:
+    #         # Drop tables in reverse order to avoid foreign key constraints
+    #         self.cursor.execute('DROP TABLE IF EXISTS recipes_ingredients;')
+    #         self.cursor.execute('DROP TABLE IF EXISTS recipes;')
+    #         self.cursor.execute('DROP TABLE IF EXISTS ingredients;')
+    #
+    #     finally:
+    #         self.conn.commit()
+    #         self.conn.close()

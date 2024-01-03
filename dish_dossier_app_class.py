@@ -1,25 +1,17 @@
 import kivy
 import sqlite3 as sq
 from kivy.core.window import Window
-from kivy.metrics import dp
 from kivy.uix.filechooser import FileChooserIconView
 from kivy.uix.popup import Popup
 from kivy.uix.screenmanager import NoTransition
 from kivymd.app import MDApp
-from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.card import MDCard
 from kivymd.uix.dialog import MDDialog
-from kivymd.uix.label import MDLabel
-from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.screen import MDScreen
-from kivymd.uix.screenmanager import MDScreenManager
 from kivymd.uix.selectioncontrol import MDCheckbox
-from sqlalchemy import Null
 
 from db_handler import DBHandler
-# from controller import DishDossierController
-from model import DishDossierModel
 from kivy.config import Config
 from recipe_api_handler import RecipeAPIHandler
 
@@ -27,7 +19,6 @@ Config.set('graphics', 'resizable', False)
 
 from kivy.lang import Builder
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.image import Image, AsyncImage
 from kivymd.uix.list import OneLineAvatarListItem, MDList, IRightBodyTouch, OneLineListItem, OneLineAvatarIconListItem
 from recipe import Recipe
 
@@ -101,11 +92,15 @@ class ScreenOne(MDScreen):
         self.ids.recipe_cook_time.text = str(recipe.cook_time) if recipe.cook_time != -1 else 'n/a'
         self.ids.recipe_total_time.text = str(recipe.total_cook_time) if recipe.total_cook_time != -1 else 'n/a'
         self.ids.recipe_servings.text = str(recipe.servings) if recipe.servings != -1 else 'N/A'
-        # self.ids.recipe_descr.text = recipe.description
+        self.ids.vegan.text_color = (0.15, 0.5, 0.12, 1) if recipe.vegan else (0.1176, 0.1176, 0.1176, 0.2)
+        self.ids.dairy_free.text_color = (0.2392, 0.2196, 0.8, 1) if recipe.dairy_free else (
+            0.1176, 0.1176, 0.1176, 0.2)
+        self.ids.gluten_free.text_color = (0.5, 0.3, 0.1, 1) if recipe.gluten_free else (0.1176, 0.1176, 0.1176, 0.2)
+        self.ids.vegetarian.text_color = (0.4, 0.6, 0, 1) if recipe.vegetarian else (0.1176, 0.1176, 0.1176, 0.2)
         self.ids.recipe_instr.text = recipe.instructions
 
         # Set Recipe Image and Ingredients
-        self.ids.recipe_full_image.source = recipe.image_url if recipe.image_url else 'img_1.png'
+        self.ids.recipe_full_image.source = recipe.image_url if recipe.image_url else 'assets/images/img.png'
 
         # Set Image button and label
         if recipe.favourite:
@@ -171,12 +166,19 @@ class ScreenTwo(MDScreen):
         self.ids.s2_recipe_total_time.text = ""
         self.ids.s2_recipe_instr.text = ""
         self.ids.s2_recipe_image_display.source = ""
+        self.ids.vegan.active = False
+        self.ids.dairy_free.active = False
+        self.ids.gluten_free.active = False
+        self.ids.vegetarian.active = False
+        self.ids.s2_cuisine.text = ""
+        self.ids.s2_category.text = ""
         # print(self.ids.s2_recipe_ingr.text.split('\n'))
         self.ids.s2_recipe_ingr.text = ""
 
         self.switch_screen()
 
-    def show_edit_recipe_info(self, title, servings, prep_t, cook_t, total_t, instr, img, ingr):
+    def show_edit_recipe_info(self, title, servings, prep_t, cook_t, total_t, instr, img, cuisine, food_cat, vegan,
+                              dairy_free, gluten_free, vegetarian, ingr):
         self.ids.s2_recipe_title_input.text = title
         self.ids.s2_recipe_servings.text = str(servings) if servings != -1 else ""
         self.ids.s2_recipe_prep_time.text = str(prep_t) if prep_t != -1 else ""
@@ -184,6 +186,12 @@ class ScreenTwo(MDScreen):
         self.ids.s2_recipe_total_time.text = str(total_t) if total_t != -1 else ""
         self.ids.s2_recipe_instr.text = instr
         self.ids.s2_recipe_image_display.source = img
+        self.ids.vegan.active = vegan
+        self.ids.dairy_free.active = dairy_free
+        self.ids.gluten_free.active = gluten_free
+        self.ids.vegetarian.active = vegetarian
+        self.ids.s2_cuisine.active = cuisine
+        self.ids.s2_category.active = food_cat
 
         for ingredient in ingr:
             self.ids.s2_recipe_ingr.text += ingredient.ingredient + "\n"
@@ -198,6 +206,12 @@ class ScreenTwo(MDScreen):
         prep_t = self.ids.s2_recipe_prep_time.text
         cook_t = self.ids.s2_recipe_cook_time.text
         total_t = self.ids.s2_recipe_total_time.text
+        vegan = self.ids.vegan.active
+        dairy_free = self.ids.dairy_free.active
+        gluten_free = self.ids.gluten_free.active
+        vegetarian = self.ids.vegetarian.active
+        cuisine = self.ids.s2_cuisine.text
+        food_category = self.ids.s2_category.text
         instr = self.ids.s2_recipe_instr.text
         # instr = self.root.ids.screen_two.ids.s2_recipe_instr.text.split('\n')
 
@@ -207,7 +221,7 @@ class ScreenTwo(MDScreen):
             image = self.ids.s2_recipe_image_display.source
             print("IMMGGGG")
         else:
-            image = "img.png"
+            image = "assets/images/img.png"
             print("NO IMMMGGG IMG")
 
         # print(self.ids.s2_recipe_ingr.text.split("\n"))
@@ -216,25 +230,24 @@ class ScreenTwo(MDScreen):
         if title == "" or instr == "" or ingr == "" or (title == "" and instr == "" and ingr == ""):
             return
 
-        return None, title, prep_t, cook_t, total_t, servings, image, False, True, instr, ingr
+        return None, title, prep_t, cook_t, total_t, servings, image, False, True, instr, cuisine, food_category, vegan, vegetarian, gluten_free, dairy_free, ingr
 
 
-class ItemConfirm(OneLineAvatarIconListItem):
+class FilterItem(OneLineAvatarIconListItem):
     divider = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.selected = False
+        self.theme_text_color = "Custom"
+        self.text_color = (0.1176, 0.1176, 0.1176, 1)
+        self.bg_color = (0.9725, 0.902, 0.7333, 1)
 
     def set_icon(self, instance_check):
         if not instance_check.active:
             instance_check.active = True  # False if instance_check.active else True
         else:
             instance_check.active = False
-        # check_list = instance_check.get_widgets(instance_check.group)
-        # for check in check_list:
-        #     if check != instance_check:
-        #         check.active = False
 
 
 class DishDossierController(BoxLayout):
@@ -245,7 +258,7 @@ class DishDossierApp(MDApp):
     def __init__(self):
         super().__init__()
         self.api_handler = RecipeAPIHandler()
-        self.model = DishDossierModel()
+        # self.model = DishDossierModel()
         self.db = DBHandler()
 
         self.selected_recipe_list = 'all_recipes'
@@ -273,27 +286,13 @@ class DishDossierApp(MDApp):
     def load_random_recipe(self):
         print('LOAD RECIPE FROM API')
         # self.load_recipe_list_with_recipes()
-        recipes = self.api_handler.load_random_recipes_from_api()
+        recipes_data = self.api_handler.load_random_recipes_from_api()
 
-        for recipe in recipes:
-            print(recipe)
+        for recipe_info in recipes_data:
+            print(recipe_info)
 
-            recipe_data = {
-                "recipe_api_id": recipe['id'],
-                "title": recipe['title'],
-                "prep_time": recipe['preparationMinutes'],
-                "cook_time": recipe['cookingMinutes'],
-                "total_cook_time": recipe['readyInMinutes'],
-                "servings": recipe['servings'],
-                "image_url": recipe['image'] if recipe['image'] != '' else 'img.png',
-                "favourite": False,
-                "original_recipe": False,
-                "instructions": recipe['instructions'],
-            }
-
-            ingredients_data = recipe['extendedIngredients']
-
-            recipe_exists = self.db.add_recipe(**recipe_data, ingredients_data=ingredients_data)
+            recipe_exists = self.db.add_recipe(**recipe_info)
+            # recipe_exists = self.db.add_recipe(**recipe_info, ingredients_data=ingredients_data)
             # recipe_id = self.db.add_recipe(recipe_api_id, title, prep_time, cook_time, total_cook_time, servings, image,
             #                                favourite,
             #                                original_recipe, instructions, ingredients_data)
@@ -339,24 +338,28 @@ class DishDossierApp(MDApp):
 
     def on_recipe_select(self, instance):
         # print(self.root.ids.screen_one.ids)
-        # print(instance.id)
+        # print(instance.ids.recipe_title_btn.text)
         # print(type(instance.id))
         try:
             if instance.id != "None":
                 # print("NOT NONE")
                 recipe = self.db.get_recipe(instance.id)
             else:
-                # print("NONEEEE")
-                recipe = self.db.get_original_recipe(instance.text)
+                title = instance.ids.recipe_title_btn.text
+                print("NONEEEE")
+                recipe = self.db.get_original_recipe(title)
+                # print(recipe)
         except AttributeError:
+            print("ERRRRRROOOOR")
             recipe = instance
+            # print(recipe.title)
 
         self.current_recipe = recipe
 
         if self.current_recipe.original_recipe:
             self.root.ids.screen_one.switch_on_delete_edit_btn(True)
 
-        print(f"TITLE: {recipe.title}")
+        # print(f"TITLE: {recipe.title}")
         self.root.ids.screen_one.set_recipe_info(recipe)
 
     def on_recipe_list_select(self, list):
@@ -424,6 +427,7 @@ class DishDossierApp(MDApp):
 
         recipes = self.db.search_for_recipes(search_by, look_for, original, favs)
 
+        self.root.ids.recipe_list.clear_widgets()
         self.load_recipe_list_with_recipes(recipes)
         self.root.ids.recipe_scroll.scroll_y = 1
 
@@ -504,10 +508,11 @@ class DishDossierApp(MDApp):
 
         recipe_data = [recipe.title, recipe.servings, recipe.prep_time,
                        recipe.cook_time, recipe.total_cook_time, recipe.instructions,
-                       recipe.image_url, recipe.ingredients]
+                       recipe.image_url, recipe.cuisine, recipe.food_category, recipe.vegan,
+                       recipe.dairy_free, recipe.gluten_free, recipe.vegetarian, recipe.ingredients]
         # print(recipe_data)
         self.root.ids.screen_two.show_edit_recipe_info(*recipe_data)
-
+        print(f"DONE EDITIIIING {recipe}")
         self.root.ids.screen_two.ids.add_done_btn.on_release = lambda: self.done_editing(recipe)
 
     def done_editing(self, recipe):
@@ -520,7 +525,8 @@ class DishDossierApp(MDApp):
         new_recipe_info = self.root.ids.screen_two.done_btn()
         # print(new_recipe_info)
         print("NEW INFOOOOOO")
-        self.db.edit_recipe(recipe, new_recipe_info)
+        print(*new_recipe_info)
+        self.db.edit_recipe(recipe, *new_recipe_info)
         print(recipe.instructions)
         self.root.ids.screen_two.cancel_add_edit_recipe()
         self.on_recipe_list_select(self.selected_recipe_list)
@@ -542,33 +548,40 @@ class DishDossierApp(MDApp):
                 title="Choose search method",
                 type="confirmation",
                 items=[
-                    ItemConfirm(id="title_item", text="Title"),
-                    ItemConfirm(id="ingredient_item", text="Ingredient"),
-                    ItemConfirm(id="cuisine_item", text="Cuisine")
+                    FilterItem(id="title_item", text="Title"),
+                    FilterItem(id="ingredient_item", text="Ingredient"),
+                    FilterItem(id="cuisine_item", text="Cuisine"),
+                    FilterItem(id="food_cat_item", text="Category"),
+                    FilterItem(id="vegan_item", text="Vegan"),
+                    FilterItem(id="dairy_free_item", text="Dairy-free"),
+                    FilterItem(id="gluten_free_item", text="Gluten-free"),
+                    FilterItem(id="vegetarian_item", text="Vegetarian"),
                 ],
                 buttons=[
                     MDFlatButton(
                         id="cancel_btn",
                         text="CANCEL",
                         theme_text_color="Custom",
-                        text_color=self.theme_cls.primary_color,
+                        text_color=(0.65098, 0.35294, 0, 1),
                         on_release=lambda instance: self.close_search_by_menu(instance),
                     ),
                     MDRaisedButton(
                         id="ok_btn",
                         text="OK",
                         theme_text_color="Custom",
-                        # text_color=self.theme_cls.primary_color,
+                        md_bg_color=(0.65098, 0.35294, 0, 1),
+                        text_color=(0.9765, 0.9686, 0.8745, 1),
                         on_release=lambda instance: self.ok_search_by_menu(instance),
                     ),
                 ],
+                md_bg_color=(0.2392, 0.2196, 0.1725, 0.6),
                 on_touch_down=lambda instance, touch: self.check_touch_outside(instance, touch),
             )
 
             # Set searching by title to be a default
             self.search_menu.items[0].ids.check.active = True
             self.search_menu.items[0].ids.check.theme_text_color = "Custom"
-            self.search_menu.items[0].ids.check.text_color = self.theme_cls.primary_color
+            self.search_menu.items[0].ids.check.text_color = (0.65098, 0.35294, 0, 0.9)
             self.search_menu.items[0].state = "down"
             self.ok_search_by_menu(self.search_menu)
 

@@ -43,13 +43,32 @@
         radius: 24
         pos_hint: {"center_x": 0.5, "center_y": 0.5}
 
+<RecipeCheckItem>:
+    on_release: root.set_icon(check)
+    #size_hint: None, None
+    #width: dp(10)
 
-<ItemConfirm>
+    RightCheckbox:
+        id: check
+
+        size_hint: None, None
+        #pos_hint: {"left": 1, "center_y": 0.5}
+        width: dp(30)
+        #size_hint_x: 0.1
+        #on_active: app.check_button_state(self, self.active)
+        #group: "check"
+
+<FilterItem>
     on_release: root.set_icon(check)
 
     CheckboxLeftWidget:
         id: check
+        color_active: (0.65098, 0.35294, 0, 0.9)
+        theme_text_color: "Custom"
+        text_color: (0.65098, 0.35294, 0, 0.9)
+        #color_inactive: (0.65098, 0.35294, 0, 0.9)
         #on_active: app.check_button_state(self, self.active)
+        on_active: self.color_inactive = (0.65098, 0.35294, 0, 0.9)
         #group: "check"
 
 
@@ -123,9 +142,52 @@
                     pos_hint: {"center_x": 0.5, "center_y": 0.5}
 
                 MDBoxLayout:
-                    #orientation: "vertical"
+                    size_hint: 0.26, 0.1
+                    md_bg_color: (0.2392, 0.2196, 0.1725, 0.1)
+                    radius: 35
+
+                    padding: dp(10)
+                    spacing: dp(10)
+
+                    MDIcon:
+                        id: vegan
+
+                        icon: "alpha-v-circle-outline"
+                        font_size: dp(19)
+                        #pos_hint: {"center_y": 0.5}
+                        theme_text_color: "Custom"
+                        text_color: (0.15, 0.5, 0.12, 1)
+
+                    MDIcon:
+                        id: dairy_free
+
+                        icon: "cow-off"
+                        font_size: dp(18)
+                        #pos_hint: {"center_y": 0.5}
+                        theme_text_color: "Custom"
+                        text_color: (0.2392, 0.2196, 0.8, 1)
+
+                    MDIcon:
+                        id: gluten_free
+
+                        icon: "barley-off"
+                        font_size: dp(18)
+                        #pos_hint: {"center_y": 0.5}
+                        theme_text_color: "Custom"
+                        #text_color: (0.5, 0.3, 0.1, 1)
+                        text_color: (0.1176, 0.1176, 0.1176, 0.2)
+
+                    MDIcon:
+                        id: vegetarian
+
+                        icon: "leaf"
+                        font_size: dp(18)
+                        #pos_hint: {"center_y": 0.5}
+                        theme_text_color: "Custom"
+                        text_color: (0.4, 0.6, 0, 1)
+
+                MDBoxLayout:
                     size_hint_y: 0.1
-                    #size_hint: None, None
                     spacing: dp(10)
 
                     MDIcon:
@@ -399,11 +461,12 @@
 
 
                         padding: 30
-                        spacing: 30
+                        spacing: 60
 
                         MDGridLayout:
                             cols: 2
                             size_hint: 1, 0.1
+
 
                             MDLabel:
                                 id: s2_recipe_title
@@ -425,7 +488,121 @@
 
                                 font_name: "fonts/athiti/Athiti-Regular.ttf"
                                 theme_text_color: "Custom"
-                                text_color: (0.1176, 0.1176, 0.1176, 1)
+                                text_color_normal: (0.1176, 0.1176, 0.1176, 1)
+                                text_color_focus: (0.1176, 0.1176, 0.1176, 1)
+                                hint_text_color_focus: (0.1176, 0.1176, 0.1176, 1)
+                                hint_text_color_normal: (0.1176, 0.1176, 0.1176, 0.6)
+                                line_color_normal: (0.65098, 0.35294, 0, 1)
+                                line_color_focus: (0.65098, 0.35294, 0, 1)
+
+
+                        MDBoxLayout:
+                            orientation: "vertical"
+                            size_hint: 1, 0.5
+                            #md_bg_color: (0.2392, 0.2196, 0.1725, 0.1)
+                            #pos_hint: {"center_x": 0.5, "bottom": 1}
+                            radius: 35
+
+                            padding: [dp(0), dp(30), dp(0), dp(30)]
+                            spacing: dp(30)
+
+
+                            MDBoxLayout:
+                                orientation: "vertical"
+                                #padding: dp(50)
+                              #  spacing: dp(40)
+
+
+                                MDGridLayout:
+                                    cols: 2
+                                    size_hint_x: 0.4
+                                    pos_hint: {"center_x": 0.2}
+
+                                    MDLabel:
+                                        text: "Vegan"
+                                        theme_text_color: "Custom"
+                                        font_size: dp(19)
+                                        text_color: (0.1176, 0.1176, 0.1176, 1)
+                                        font_name: "fonts/athiti/Athiti-SemiBold.ttf"
+
+                                    MDSwitch:
+                                        id: vegan
+
+                                        #icon_active_color: (0.65098, 0.35294, 0, 0.6)
+                                        track_color_inactive: (0.1176, 0.1176, 0.1176, 0.2)
+                                        track_color_active: (0.65098, 0.35294, 0, 0.6)
+                                        thumb_color_inactive: (0.65098, 0.35294, 0, 1)
+                                        thumb_color_active: (0.65098, 0.35294, 0, 1)
+
+
+                                MDGridLayout:
+                                    cols: 2
+                                    size_hint_x: 0.4
+                                    pos_hint: {"center_x": 0.75}
+
+                                    MDLabel:
+                                        text: "Dairy-free"
+                                        theme_text_color: "Custom"
+                                        font_size: dp(19)
+                                        text_color: (0.1176, 0.1176, 0.1176, 1)
+                                        font_name: "fonts/athiti/Athiti-SemiBold.ttf"
+
+                                    MDSwitch:
+                                        id: dairy_free
+
+                                        #icon_active_color: (0.65098, 0.35294, 0, 0.6)
+                                        track_color_inactive: (0.1176, 0.1176, 0.1176, 0.2)
+                                        track_color_active: (0.65098, 0.35294, 0, 0.6)
+                                        thumb_color_inactive: (0.65098, 0.35294, 0, 1)
+                                        thumb_color_active: (0.65098, 0.35294, 0, 1)
+
+
+                            MDBoxLayout:
+                                orientation: "vertical"
+
+                                MDGridLayout:
+                                    cols: 2
+                                    size_hint_x: 0.4
+                                    pos_hint: {"center_x": 0.2}
+
+                                    MDLabel:
+                                        text: "Gluten-free"
+                                        theme_text_color: "Custom"
+                                        font_size: dp(19)
+                                        text_color: (0.1176, 0.1176, 0.1176, 1)
+                                        font_name: "fonts/athiti/Athiti-SemiBold.ttf"
+
+                                    MDSwitch:
+                                        id: gluten_free
+
+                                        #icon_active_color: (0.65098, 0.35294, 0, 0.6)
+                                        track_color_inactive: (0.1176, 0.1176, 0.1176, 0.2)
+                                        track_color_active: (0.65098, 0.35294, 0, 0.6)
+                                        thumb_color_inactive: (0.65098, 0.35294, 0, 1)
+                                        thumb_color_active: (0.65098, 0.35294, 0, 1)
+
+                                MDGridLayout:
+                                    cols: 2
+                                    size_hint_x: 0.4
+                                    pos_hint: {"center_x": 0.75}
+
+                                    MDLabel:
+                                        text: "Vegetarian"
+                                        theme_text_color: "Custom"
+                                        font_size: dp(19)
+                                        text_color: (0.1176, 0.1176, 0.1176, 1)
+                                        font_name: "fonts/athiti/Athiti-SemiBold.ttf"
+
+                                    MDSwitch:
+                                        id: vegetarian
+
+                                       #icon_active_color: (0.65098, 0.35294, 0, 0.6)
+                                        track_color_inactive: (0.1176, 0.1176, 0.1176, 0.2)
+                                        track_color_active: (0.65098, 0.35294, 0, 0.6)
+                                        thumb_color_inactive: (0.65098, 0.35294, 0, 1)
+                                        thumb_color_active: (0.65098, 0.35294, 0, 1)
+                                        #on_active: print(self.active)
+
 
                         MDGridLayout:
                             cols: 2
@@ -433,9 +610,64 @@
 
                             MDLabel:
                                 size_hint_x: 0.5
+
+                                text: 'Cuisine'
+                                font_size: dp(19)
+                                font_name: "fonts/athiti/Athiti-SemiBold.ttf"
+                                theme_text_color: "Custom"
+                                text_color: (0.1176, 0.1176, 0.1176, 1)
+
+                            MDTextField:
+                                id: s2_cuisine
+
+                                hint_text: "Add cuisine type here"
+
+                                font_name: "fonts/athiti/Athiti-Regular.ttf"
+                                theme_text_color: "Custom"
+                                text_color_normal: (0.1176, 0.1176, 0.1176, 1)
+                                text_color_focus: (0.1176, 0.1176, 0.1176, 1)
+                                hint_text_color_focus: (0.1176, 0.1176, 0.1176, 1)
+                                hint_text_color_normal: (0.1176, 0.1176, 0.1176, 0.6)
+                                line_color_normal: (0.65098, 0.35294, 0, 1)
+                                line_color_focus: (0.65098, 0.35294, 0, 1)
+
+                        MDGridLayout:
+                            cols: 2
+                            size_hint: 1, 0.1
+
+                            MDLabel:
+                                size_hint_x: 0.5
+
+                                text: 'Category'
+                                font_size: dp(19)
+                                font_name: "fonts/athiti/Athiti-SemiBold.ttf"
+                                theme_text_color: "Custom"
+                                text_color: (0.1176, 0.1176, 0.1176, 1)
+
+                            MDTextField:
+                                id: s2_category
+
+                                hint_text: "Add dish category here"
+
+                                font_name: "fonts/athiti/Athiti-Regular.ttf"
+                                theme_text_color: "Custom"
+                                text_color_normal: (0.1176, 0.1176, 0.1176, 1)
+                                text_color_focus: (0.1176, 0.1176, 0.1176, 1)
+                                hint_text_color_focus: (0.1176, 0.1176, 0.1176, 1)
+                                hint_text_color_normal: (0.1176, 0.1176, 0.1176, 0.6)
+                                line_color_normal: (0.65098, 0.35294, 0, 1)
+                                line_color_focus: (0.65098, 0.35294, 0, 1)
+
+                        MDGridLayout:
+                            cols: 2
+                            size_hint: 1, 0.1
+                            MDLabel:
+                                size_hint_x: 0.5
                                 font_size: dp(19)
 
-                                text: 'Servings'
+                                text: "Servings"
+
+                                #md_bg_color: (0, 0, 1, 0.2)
                                 font_name: "fonts/athiti/Athiti-SemiBold.ttf"
                                 theme_text_color: "Custom"
                                 text_color: (0.1176, 0.1176, 0.1176, 1)
@@ -443,14 +675,14 @@
                             MDTextField:
                                 id: s2_recipe_servings
 
+                                hint_text: "Add servings number here"
                                 font_name: "fonts/athiti/Athiti-Regular.ttf"
                                 theme_text_color: "Custom"
-                                text_color: (0.1176, 0.1176, 0.1176, 1)
-
-                                hint_text: "Add number of servings here"
-                                hint_text_color_normal: (0.1176, 0.1176, 0.1176, 0.6)
+                                text_color_normal: (0.1176, 0.1176, 0.1176, 1)
+                                text_color_focus: (0.1176, 0.1176, 0.1176, 1)
                                 hint_text_color_focus: (0.1176, 0.1176, 0.1176, 1)
-
+                                hint_text_color_normal: (0.1176, 0.1176, 0.1176, 0.6)
+                                line_color_normal: (0.65098, 0.35294, 0, 1)
                                 line_color_focus: (0.65098, 0.35294, 0, 1)
 
 
@@ -473,14 +705,14 @@
                                 max_text_length: 4
 
                                 hint_text: "Add prep time in minutes here"
-                                hint_text_color_normal: (0.1176, 0.1176, 0.1176, 0.6)
-                                hint_text_color_focus: (0.1176, 0.1176, 0.1176, 1)
-
-                                line_color_focus: (0.65098, 0.35294, 0, 1)
-
                                 font_name: "fonts/athiti/Athiti-Regular.ttf"
                                 theme_text_color: "Custom"
-                                text_color: (0.1176, 0.1176, 0.1176, 1)
+                                text_color_normal: (0.1176, 0.1176, 0.1176, 1)
+                                text_color_focus: (0.1176, 0.1176, 0.1176, 1)
+                                hint_text_color_focus: (0.1176, 0.1176, 0.1176, 1)
+                                hint_text_color_normal: (0.1176, 0.1176, 0.1176, 0.6)
+                                line_color_normal: (0.65098, 0.35294, 0, 1)
+                                line_color_focus: (0.65098, 0.35294, 0, 1)
 
                         MDGridLayout:
                             cols: 2
@@ -501,12 +733,13 @@
                                 max_text_length: 4
 
                                 hint_text: "Add cook time in minutes here"
-                                hint_text_color_normal: (0.1176, 0.1176, 0.1176, 0.6)
-                                hint_text_color_focus: (0.1176, 0.1176, 0.1176, 1)
-
                                 font_name: "fonts/athiti/Athiti-Regular.ttf"
                                 theme_text_color: "Custom"
-                                text_color: (0.1176, 0.1176, 0.1176, 1)
+                                text_color_normal: (0.1176, 0.1176, 0.1176, 1)
+                                text_color_focus: (0.1176, 0.1176, 0.1176, 1)
+                                hint_text_color_focus: (0.1176, 0.1176, 0.1176, 1)
+                                hint_text_color_normal: (0.1176, 0.1176, 0.1176, 0.6)
+                                line_color_normal: (0.65098, 0.35294, 0, 1)
                                 line_color_focus: (0.65098, 0.35294, 0, 1)
 
                         MDGridLayout:
@@ -528,14 +761,14 @@
                                 max_text_length: 4
 
                                 hint_text: "Add total preparation time in minutes here"
-                                hint_text_color_normal: (0.1176, 0.1176, 0.1176, 0.6)
-                                hint_text_color_focus: (0.1176, 0.1176, 0.1176, 1)
-
-                                line_color_focus: (0.65098, 0.35294, 0, 1)
-
                                 font_name: "fonts/athiti/Athiti-Regular.ttf"
                                 theme_text_color: "Custom"
-                                text_color: (0.1176, 0.1176, 0.1176, 1)
+                                text_color_normal: (0.1176, 0.1176, 0.1176, 1)
+                                text_color_focus: (0.1176, 0.1176, 0.1176, 1)
+                                hint_text_color_focus: (0.1176, 0.1176, 0.1176, 1)
+                                hint_text_color_normal: (0.1176, 0.1176, 0.1176, 0.6)
+                                line_color_normal: (0.65098, 0.35294, 0, 1)
+                                line_color_focus: (0.65098, 0.35294, 0, 1)
 
                         MDBoxLayout:
                             orientation: 'vertical'
@@ -568,12 +801,16 @@
                                     required: True
                                     multiline: True
 
-                                    #line_color_focus: (0.1176, 0.1176, 0.1176, 1)
                                     hint_text: "Add instructions here"
 
                                     font_name: "fonts/athiti/Athiti-Regular.ttf"
                                     theme_text_color: "Custom"
-                                    text_color: (0.1176, 0.1176, 0.1176, 1)
+                                    text_color_normal: (0.1176, 0.1176, 0.1176, 1)
+                                    text_color_focus: (0.1176, 0.1176, 0.1176, 1)
+                                    hint_text_color_focus: (0.1176, 0.1176, 0.1176, 1)
+                                    hint_text_color_normal: (0.1176, 0.1176, 0.1176, 0.6)
+                                    line_color_normal: (0.65098, 0.35294, 0, 1)
+                                    line_color_focus: (0.65098, 0.35294, 0, 1)
 
                     MDBoxLayout:
                         orientation: 'vertical'
@@ -661,7 +898,12 @@
 
                                     font_name: "fonts/athiti/Athiti-Regular.ttf"
                                     theme_text_color: "Custom"
-                                    text_color: (0.1176, 0.1176, 0.1176, 1)
+                                    text_color_normal: (0.1176, 0.1176, 0.1176, 1)
+                                    text_color_focus: (0.1176, 0.1176, 0.1176, 1)
+                                    hint_text_color_focus: (0.1176, 0.1176, 0.1176, 1)
+                                    hint_text_color_normal: (0.1176, 0.1176, 0.1176, 0.6)
+                                    line_color_normal: (0.65098, 0.35294, 0, 1)
+                                    line_color_focus: (0.65098, 0.35294, 0, 1)
 
 DishDossierController:
     orientation: 'horizontal'
@@ -703,7 +945,6 @@ DishDossierController:
                     theme_text_color: "Custom"
                     font_name: "fonts/athiti/Athiti-SemiBold.ttf"
                     text_color: (0.9569, 0.9569, 0.9569, 1)
-                    #specific_text_color: "#e7e4c0"
                     icon_color_item_normal: (0.651, 0.353, 0, 1)
                     icon_color_item_active: (0.2392, 0.2196, 0.1725, 1)
                     selected_color_background: (0.9725, 0.902, 0.7333, 1)
