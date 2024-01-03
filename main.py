@@ -1,4 +1,4 @@
-from dish_dossier_app_class import DishDossierApp
+from dish_dossier_app import DishDossierApp
 
 
 if __name__ == "__main__":
