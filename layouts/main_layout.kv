@@ -5,7 +5,6 @@
     spacing: dp(10)
     padding: dp(10)
     elevation: 1
-    #ripple_behavior: True
     md_bg_color: (0.93, 0.85, 0.68, 1)
     shadow_softness: 6
     shadow_color: (0.651, 0.353, 0,2)
@@ -23,40 +22,18 @@
 
     MDLabel:
         id: recipe_title_btn
-        #size_hint_x: None
-        #width: dp(150)
         theme_text_color: "Custom"
         text_color: (0.2392, 0.2196, 0.1725, 1)
-        #text_color: (0.9725, 0.902, 0.7333, 1)
         pos_hint: {"center_x": 0.5, "center_y": 0.5}
         font_name: "fonts/athiti/Athiti-SemiBold.ttf"
-        #on_release: app.on_recipe_select
 
 <RecipeItem>:
-    #size_hint_y: None
-    #height: dp(300)
-
     ImageLeftWidget:
         id: recipe_img
         size_hint: None, None
         size: 150, 150
         radius: 24
         pos_hint: {"center_x": 0.5, "center_y": 0.5}
-
-<RecipeCheckItem>:
-    on_release: root.set_icon(check)
-    #size_hint: None, None
-    #width: dp(10)
-
-    RightCheckbox:
-        id: check
-
-        size_hint: None, None
-        #pos_hint: {"left": 1, "center_y": 0.5}
-        width: dp(30)
-        #size_hint_x: 0.1
-        #on_active: app.check_button_state(self, self.active)
-        #group: "check"
 
 <FilterItem>
     on_release: root.set_icon(check)
@@ -66,10 +43,7 @@
         color_active: (0.65098, 0.35294, 0, 0.9)
         theme_text_color: "Custom"
         text_color: (0.65098, 0.35294, 0, 0.9)
-        #color_inactive: (0.65098, 0.35294, 0, 0.9)
-        #on_active: app.check_button_state(self, self.active)
         on_active: self.color_inactive = (0.65098, 0.35294, 0, 0.9)
-        #group: "check"
 
 
 <ScreenOne>:
@@ -111,7 +85,7 @@
 
                         icon: "pencil"
                         theme_icon_color: "Custom"
-                        icon_color: 0, 1, 0, 1
+                        icon_color: (0.65098, 0.35294, 0, 1)
                         pos_hint: {"right": 0.98, "center_y": 0.5}
                         opacity: 1
                         on_release: app.edit_recipe()
@@ -122,7 +96,7 @@
 
                         icon: "delete"
                         theme_icon_color: "Custom"
-                        icon_color: 1, 0, 0, 1
+                        icon_color: (0.9, 0.2, 0.1, 0.8)
                         size_hint: None, None
                         pos_hint: {"center_x": 0.98, "center_y": 0.5}
                         opacity: 1
@@ -154,7 +128,6 @@
 
                         icon: "alpha-v-circle-outline"
                         font_size: dp(19)
-                        #pos_hint: {"center_y": 0.5}
                         theme_text_color: "Custom"
                         text_color: (0.15, 0.5, 0.12, 1)
 
@@ -172,9 +145,7 @@
 
                         icon: "barley-off"
                         font_size: dp(18)
-                        #pos_hint: {"center_y": 0.5}
                         theme_text_color: "Custom"
-                        #text_color: (0.5, 0.3, 0.1, 1)
                         text_color: (0.1176, 0.1176, 0.1176, 0.2)
 
                     MDIcon:
@@ -182,7 +153,6 @@
 
                         icon: "leaf"
                         font_size: dp(18)
-                        #pos_hint: {"center_y": 0.5}
                         theme_text_color: "Custom"
                         text_color: (0.4, 0.6, 0, 1)
 
@@ -191,7 +161,6 @@
                     spacing: dp(10)
 
                     MDIcon:
-                        #size_hint: 0.25, 0.7
                         icon: "account-supervisor-circle"
                         font_size: dp(23)
                         pos_hint: {"center_x": 0.5, "center_y": 0.5}
@@ -209,7 +178,6 @@
 
                 MDBoxLayout:
                     size_hint: 0.6, None
-                    #pos_hint: {"center_x": 0.5, "center_y": 0.5}
                     spacing: dp(10)
 
                     MDIcon:
@@ -227,9 +195,7 @@
 
                         MDBoxLayout:
                             orientation: "vertical"
-                            #size_hint: None, None
                             spacing: dp(15)
-                            #pos_hint: {"center_x": 0.5, "center_y": 0.5}
 
                             MDLabel:
                                 id: recipe_prep_time
@@ -269,7 +235,6 @@
 
                         MDBoxLayout:
                             orientation: "vertical"
-                            #size_hint: None, None
                             spacing: dp(15)
                             pos_hint: {"center_x": 0.5, "center_y": 0.5}
 
@@ -289,7 +254,6 @@
 
                 MDBoxLayout:
                     orientation: 'vertical'
-                    #size_hint: 1, 1
 
                     MDLabel:
                         size_hint_y: None
@@ -297,7 +261,6 @@
                         theme_text_color: "Custom"
                         font_name: "fonts/athiti/Athiti-SemiBold.ttf"
                         text_color: (0.1176, 0.1176, 0.1176, 1)
-                        #height: dp(30)
                         pos_hint: {"bottom": 0.9}
                         font_size: dp(19)
 
@@ -311,8 +274,6 @@
                             font_name: "fonts/athiti/Athiti-Medium.ttf"
                             size_hint_y: None
                             height: self.texture_size[1]
-                            #adaptive_height: True
-                            #theme_text_color: "Secondary"
                             padding: dp(10)
 
 
@@ -377,7 +338,6 @@
                             text: "Ingredients"
                             size_hint_y: None
                             height: self.texture_size[1]
-                            #adaptive_height: True
                             font_name: "fonts/athiti/Athiti-Medium.ttf"
                             theme_text_color: "Custom"
                             text_color: (0.1176, 0.1176, 0.1176, 1)
@@ -413,8 +373,6 @@
                     theme_text_color: "Custom"
                     font_name: "fonts/athiti/Athiti-SemiBold.ttf"
                     text_color: (0.9569, 0.9569, 0.9569, 1)
-                    #pos_hint: {'center_y': 0.5, 'right': 1}
-                    #on_release: app.done_creating_editing_recipe()
 
                 Widget:  # Empty widget to create spacing
 
@@ -422,8 +380,6 @@
                     id: add_cancel_btn
 
                     text: "Cancel"
-                    #size_hint_y: 1
-                    #pos_hint: {'center_x': 0.5, 'center_y': 0.5}
                     md_bg_color: (1, 0.1, 0.1, 0.8)
 
                     theme_text_color: "Custom"
@@ -439,15 +395,6 @@
 
                 MDGridLayout:
                     cols: 2
-                    #spacing:0.35
-
-                    #MDScrollView:
-                        #canvas.before:
-                         #   Color:
-                          #      rgba: app.theme_cls.primary_color
-                           # Rectangle:
-                            #    pos: self.pos
-                             #   size: self.size
 
                     MDBoxLayout:
                         orientation: 'vertical'
@@ -499,8 +446,6 @@
                         MDBoxLayout:
                             orientation: "vertical"
                             size_hint: 1, 0.5
-                            #md_bg_color: (0.2392, 0.2196, 0.1725, 0.1)
-                            #pos_hint: {"center_x": 0.5, "bottom": 1}
                             radius: 35
 
                             padding: [dp(0), dp(30), dp(0), dp(30)]
@@ -509,9 +454,6 @@
 
                             MDBoxLayout:
                                 orientation: "vertical"
-                                #padding: dp(50)
-                              #  spacing: dp(40)
-
 
                                 MDGridLayout:
                                     cols: 2
@@ -528,7 +470,6 @@
                                     MDSwitch:
                                         id: vegan
 
-                                        #icon_active_color: (0.65098, 0.35294, 0, 0.6)
                                         track_color_inactive: (0.1176, 0.1176, 0.1176, 0.2)
                                         track_color_active: (0.65098, 0.35294, 0, 0.6)
                                         thumb_color_inactive: (0.65098, 0.35294, 0, 1)
@@ -550,12 +491,10 @@
                                     MDSwitch:
                                         id: dairy_free
 
-                                        #icon_active_color: (0.65098, 0.35294, 0, 0.6)
                                         track_color_inactive: (0.1176, 0.1176, 0.1176, 0.2)
                                         track_color_active: (0.65098, 0.35294, 0, 0.6)
                                         thumb_color_inactive: (0.65098, 0.35294, 0, 1)
                                         thumb_color_active: (0.65098, 0.35294, 0, 1)
-
 
                             MDBoxLayout:
                                 orientation: "vertical"
@@ -575,7 +514,6 @@
                                     MDSwitch:
                                         id: gluten_free
 
-                                        #icon_active_color: (0.65098, 0.35294, 0, 0.6)
                                         track_color_inactive: (0.1176, 0.1176, 0.1176, 0.2)
                                         track_color_active: (0.65098, 0.35294, 0, 0.6)
                                         thumb_color_inactive: (0.65098, 0.35294, 0, 1)
@@ -596,13 +534,11 @@
                                     MDSwitch:
                                         id: vegetarian
 
-                                       #icon_active_color: (0.65098, 0.35294, 0, 0.6)
                                         track_color_inactive: (0.1176, 0.1176, 0.1176, 0.2)
                                         track_color_active: (0.65098, 0.35294, 0, 0.6)
                                         thumb_color_inactive: (0.65098, 0.35294, 0, 1)
                                         thumb_color_active: (0.65098, 0.35294, 0, 1)
                                         #on_active: print(self.active)
-
 
                         MDGridLayout:
                             cols: 2
@@ -661,13 +597,13 @@
                         MDGridLayout:
                             cols: 2
                             size_hint: 1, 0.1
+
                             MDLabel:
                                 size_hint_x: 0.5
                                 font_size: dp(19)
 
                                 text: "Servings"
 
-                                #md_bg_color: (0, 0, 1, 0.2)
                                 font_name: "fonts/athiti/Athiti-SemiBold.ttf"
                                 theme_text_color: "Custom"
                                 text_color: (0.1176, 0.1176, 0.1176, 1)
@@ -774,15 +710,7 @@
                             orientation: 'vertical'
 
                             size_hint: 1, 0.9
-                            #height: dp(120)  # Adjust this to set the minimum height of the ScrollView
                             pos_hint: {"center_x": 0.5, "center_y": 0.5}
-
-                            #canvas.before:
-                             #   Color:
-                              #      rgba: (0.9725, 0.902, 0.7333, 1)
-                               # Rectangle:
-                                #    pos: self.pos
-                                 #   size: self.size
 
                             MDLabel:
                                 size_hint_y: 0.3
@@ -814,7 +742,6 @@
 
                     MDBoxLayout:
                         orientation: 'vertical'
-                        #pos_hint: {"center_x": 0.5, "center_y": 0.8}
                         size_hint_x: 0.7
 
                         padding: 30
@@ -830,7 +757,6 @@
                         Image:
                             id: s2_recipe_image_display
 
-                            #source: app.image_source
                             size_hint: 1, None
                             pos_hint: {"center_x": 0.5, "top": 0.9}
                             width: "400dp"
@@ -922,7 +848,6 @@ DishDossierController:
 
         MDBoxLayout:
             orientation: 'vertical'
-            #size_hint_x: None  # Fixed width
 
             padding: 5, 20,
 
@@ -933,7 +858,6 @@ DishDossierController:
 
             MDBoxLayout:
                 orientation: "vertical"
-                #spacing: 50
 
                 MDNavigationRail:
                     id: nav_rail
@@ -973,8 +897,6 @@ DishDossierController:
                         text: 'Meal Planner'
                         icon: 'calendar-multiselect'
                         on_press: app.on_recipe_list_select()  #app.transition_to('meal_planner')
-
-
 
     ######### RECIPE LIST #########
     MDCard:
@@ -1019,7 +941,6 @@ DishDossierController:
 
                     hint_text: "Search"
                     size_hint_y: None
-                    #pos_hint: {'center_y': 0.9}
                     icon_right: "magnify"
                     mode: "round"
                     theme_text_color: "Custom"
@@ -1032,7 +953,6 @@ DishDossierController:
                     #icon_color: (0.65098, 0.35294, 0, 1) ### ORANGE
                     icon_right_color_normal: 0.2392, 0.2196, 0.1725, 1
                     icon_right_color_focus: (0.75, 0.45, 0.1, 1)
-                    #helper_text: "Search"
                     font_name: "fonts/athiti/Athiti-Medium.ttf"
                     on_text_validate: app.search_for_recipe(self.text)
 
@@ -1045,7 +965,6 @@ DishDossierController:
                     #width: dp(34)
                     theme_text_color: "Custom"
                     icon_color: (0.65098, 0.35294, 0, 1)
-                    #pos_hint: {"center_x": 0.5, "center_y": 0}
                     on_release: app.switch_screen()
 
 
@@ -1081,9 +1000,6 @@ DishDossierController:
 
         ScreenOne:
             id: screen_one
-            #transition: NoTransition()
 
         ScreenTwo:
             id: screen_two
-            #transition: NoTransition()
-

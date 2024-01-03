@@ -12,20 +12,72 @@ class RecipeAPIHandler():
             key = file.read()
         return key
 
-    def load_random_recipes_from_api(self):
-        ### decide on how many random recipes are needed
-        querystring = {"number": "1"}
+    def find_recipe_from_api(self, search_by, look_for, number):
+        url = "https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/complexSearch"
+
+        querystring = {"number": str(number)}
+        intolerances = []
+        diet = []
+
+        for category in search_by:
+            if category == "title":
+                querystring["query"] = look_for
+            elif category == "ingredient":
+                querystring["includeIngredients"] = look_for
+            elif category == "cuisine":
+                querystring["cuisine"] = look_for
+            elif category == "category":
+                querystring["type"] = look_for
+            elif category == "vegan":
+                diet.append("vegan")
+            elif category == "dairy-free":
+                intolerances.append("dairy")
+            elif category == "gluten-free":
+                intolerances.append("gluten")
+            elif category == "vegetarian":
+                diet.append("vegetarian")
+
+        if intolerances:
+            querystring["intolerances"] = ", ".join(intolerances)
+        if diet:
+            querystring["diet"] = ", ".join(diet)
+
+        response = requests.get(url, headers=self.headers, params=querystring)
+        recipes = response.json()["results"]
+
+        recipe_ids = ""
+        for recipe in recipes:
+            recipe_ids += str(recipe["id"]) + ", "
+
+        recipes_data = self.load_recipe_info_from_api(recipe_ids.strip(", "))
+        new_recipes = self.extract_information(recipes_data)
+
+        return new_recipes
+
+    def load_random_recipes_from_api(self, recipe_count):
+        querystring = {"number": str(recipe_count)}
 
         url = "https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/random"
 
         response = requests.get(url, headers=self.headers, params=querystring)
 
-        recipes_data = []
-        for recipe in response.json()['recipes']:
-            print(recipe)
-            cuisines = " ".join(recipe['dishTypes'])
-            # print(cuisines)
+        recipes_data = self.extract_information(response.json()['recipes'])
 
+        return recipes_data
+
+    def load_recipe_info_from_api(self, recipe_ids):
+        url = "https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/informationBulk"
+
+        querystring = {"ids": recipe_ids}
+
+        response = requests.get(url, headers=self.headers, params=querystring)
+
+        return response.json()
+
+    def extract_information(self, response):
+        recipes_data = []
+
+        for recipe in response:
             recipe_instructions = []
             steps_count = 1
 
@@ -45,8 +97,6 @@ class RecipeAPIHandler():
             except KeyError:
                 pass
 
-            print(f"RECIPE INSTR {recipe_instructions}")
-
             recipe_info = {
                 "recipe_api_id": recipe['id'],
                 "title": recipe['title'],
@@ -57,7 +107,6 @@ class RecipeAPIHandler():
                 "image_url": image,
                 "favourite": False,
                 "original_recipe": False,
-                # "instructions": recipe['instructions'],
                 "instructions": " ".join(recipe_instructions),
                 "cuisine": " ".join(recipe['cuisines']),  # recipe['cuisines'],
                 "food_category": " ".join(recipe['dishTypes']),  # same thing as above
