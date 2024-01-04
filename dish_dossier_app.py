@@ -160,8 +160,6 @@ class ScreenOne(MDScreen):
         c.save()
         print(f"PDF exported to {pdf_file_path}")
 
-        print("export")
-
 
 class ScreenTwo(MDScreen):
     def __init__(self, **kwargs):
