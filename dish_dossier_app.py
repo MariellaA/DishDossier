@@ -310,7 +310,7 @@ class DishDossierApp(MDApp):
         self.theme_cls.theme_style_switch_animation = True
         self.theme_cls.theme_style_switch_animation_duration = 0.8
 
-        return Builder.load_file('layouts/main_layout.kv')
+        return Builder.load_file('layouts/view.kv')
 
     def load_random_recipe(self, recipe_count):
         recipes_data = self.api_handler.load_random_recipes_from_api(recipe_count)
