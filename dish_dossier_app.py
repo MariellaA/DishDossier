@@ -1,3 +1,5 @@
+import os
+
 from kivy.core.window import Window
 from kivy.uix.filechooser import FileChooserIconView
 from kivy.uix.popup import Popup
@@ -7,6 +9,9 @@ from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.card import MDCard
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.screen import MDScreen
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+
 from db_handler import DBHandler
 from kivy.config import Config
 from kivy.lang import Builder
@@ -80,6 +85,82 @@ class ScreenOne(MDScreen):
         for ingredient in recipe.ingredients:
             res += f"{ingredient.ingredient}\n"
         self.ids.recipe_ingr.text = res
+
+    def export_recipe(self):
+        recipe_data = {
+            "title": self.ids.recipe_title.text.lower(),
+            "servings": self.ids.recipe_servings.text,
+            "prep": self.ids.recipe_prep_time.text,
+            "cook_time": self.ids.recipe_cook_time.text,
+            "total_cook_time": self.ids.recipe_total_time.text,
+            "ingredients": self.ids.recipe_ingr.text.split("\n"),
+            "instructions": self.ids.recipe_instr.text,
+        }
+
+        print(recipe_data["title"].lower().replace(" ", "_"))
+
+        # Set up PDF Canvas
+        desktop_path = os.path.join(os.path.expanduser("~"), 'Desktop')
+        pdf_file_path = os.path.join(desktop_path, f"{str(recipe_data['title'].lower().replace(' ', '_'))}.pdf")
+        # pdf_file_path = f"{str(recipe_data['title'].lower().replace(' ', '_'))}.pdf"
+        c = canvas.Canvas(pdf_file_path, pagesize=letter)
+        width, height = letter
+
+        # Define initial font size and line height
+        font_size = 10
+        line_height = 15
+
+        # Function to calculate the required height for the text
+        def calculate_text_height(text, font_size):
+            return sum(c.stringWidth(line, 'Helvetica', font_size) for line in text.split('\n')) + line_height * (
+                    text.count('\n') + 1)
+
+        # Function to fit text within available space by adjusting font size
+        # def fit_text_within_space(text, max_height, initial_font_size):
+        #     current_font_size = initial_font_size
+        #     while calculate_text_height(text, current_font_size) > max_height:
+        #         current_font_size -= 1
+        #         if current_font_size <= 0:
+        #             break
+        #     return current_font_size
+
+        # Function to wrap text into multiple lines based on specified line width
+        def wrap_text(text, line_width):
+            words = text.split()
+            lines = []
+            current_line = words[0]
+            for word in words[1:]:
+                if c.stringWidth(current_line + ' ' + word, 'Helvetica', font_size) <= line_width - 40:
+                    current_line += ' ' + word
+                else:
+                    lines.append(current_line)
+                    current_line = word
+            lines.append(current_line)
+            return '\n'.join(lines)
+
+        # Write recipe details to PDF
+        c.drawString(70, height - 80, f"Title: {recipe_data['title']}")
+
+        info_text = f"Servings: {recipe_data['servings']} | Prep Time: {recipe_data['prep']} min | Cook Time: {recipe_data['cook_time']} min | Total Time: {recipe_data['total_cook_time']} min"
+        c.drawString(70, height - 100, info_text)
+
+        c.drawString(70, height - 120, "Ingredients:")
+        for i, ingredient in enumerate(recipe_data['ingredients']):
+            c.drawString(80, height - 140 - (i * 20), f"{ingredient}")
+
+        n = len(recipe_data['ingredients']) * 20
+
+        instructions_text = wrap_text(recipe_data['instructions'], width - 150)
+        lines = instructions_text.split('\n')
+
+        for i, line in enumerate(lines):
+            c.drawString(70, height - 140 - n - (i * line_height), line)
+
+        # Save the PDF
+        c.save()
+        print(f"PDF exported to {pdf_file_path}")
+
+        print("export")
 
 
 class ScreenTwo(MDScreen):

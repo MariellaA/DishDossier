@@ -76,7 +76,7 @@
                 MDBoxLayout:
                     orientation: "horizontal"
                     size_hint: None, None
-                    pos_hint: {"center_x": 0.85, "center_y": 0.5}
+                    pos_hint: {"center_x": 0.75, "center_y": 0.5}
                     height: dp(20)
                     #padding: (0, 0, 0, 0)
 
@@ -86,7 +86,7 @@
                         icon: "pencil"
                         theme_icon_color: "Custom"
                         icon_color: (0.65098, 0.35294, 0, 1)
-                        pos_hint: {"right": 0.98, "center_y": 0.5}
+                        pos_hint: {"right": 0.78, "center_y": 0.5}
                         opacity: 1
                         on_release: app.edit_recipe()
                         disabled: False
@@ -98,10 +98,22 @@
                         theme_icon_color: "Custom"
                         icon_color: (0.9, 0.2, 0.1, 0.8)
                         size_hint: None, None
-                        pos_hint: {"center_x": 0.98, "center_y": 0.5}
+                        pos_hint: {"center_x": 0.88, "center_y": 0.5}
                         opacity: 1
                         on_release: app.delete_recipe()
                         disabled: True
+
+                    MDIconButton:
+                        id: export_btn
+
+                        icon: "file-export-outline"
+                        theme_icon_color: "Custom"
+                        icon_color: (0.1176, 0.1176, 0.1176, 1)
+                        size_hint: None, None
+                        pos_hint: {"center_x": 0.98, "center_y": 0.5}
+                        opacity: 1
+                        disabled: False
+                        on_release: root.export_recipe()
 
                 MDLabel:
                     id: recipe_title
