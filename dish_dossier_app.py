@@ -291,8 +291,6 @@ class DishDossierApp(MDApp):
         self.db = DBHandler()
 
         self.selected_recipe_list = 'all_recipes'
-        # self.load_random_recipe()
-        # self.load_recipe_list_with_recipes()
 
         self.current_recipe = None
         self.search_menu = None
@@ -304,9 +302,19 @@ class DishDossierApp(MDApp):
 
     def build(self):
         Window.size = (1280, 720)
+
+        # Calculate the center position based on screen size and window size
+        screen_width, screen_height = Window.size
+        window_width, window_height = Window.system_size
+
+        x = (screen_width - window_width) / 2.7
+        y = (screen_height - window_height) / 2.8
+
+        Window.left = x
+        Window.top = y
+
         self.theme_cls.theme_style = "Dark"
-        # self.theme_cls.primary_palette = "Orange"
-        self.theme_cls.primary_hue = "200"  # "500"
+        self.theme_cls.primary_hue = "200"
         self.theme_cls.theme_style_switch_animation = True
         self.theme_cls.theme_style_switch_animation_duration = 0.8
 
