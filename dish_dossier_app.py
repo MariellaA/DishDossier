@@ -137,8 +137,6 @@ class DishDossierApp(MDApp):
             if self.current_recipe.original_recipe:
                 self.root.ids.screen_one.switch_on_delete_edit_btn(True)
 
-
-
         elif list == "favourites":
             self.load_recipe_list_with_recipes(self.db.get_all_favourite_recipes(self.offset, self.page_size))
             self.root.ids.screen_one.switch_on_delete_edit_btn(False)
