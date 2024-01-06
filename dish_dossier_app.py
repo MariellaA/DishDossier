@@ -37,6 +37,7 @@ class DishDossierApp(MDApp):
 
         self.offset = 0
         self.page_size = 6
+        self.look_for = ""
 
     def build(self):
         Window.size = (1280, 720)
@@ -146,6 +147,7 @@ class DishDossierApp(MDApp):
 
     def search_for_recipe(self, look_for):
 
+        self.look_for = look_for
         self.root.ids.search_text.text = ""
 
         search_by = []
@@ -174,15 +176,16 @@ class DishDossierApp(MDApp):
             self.load_recipe_list_with_recipes(recipes)
         else:
             self.root.ids.recipe_list.clear_widgets()
+            # self.offset = 0
 
             if self.potentially_search_api:
-                found_recipes = self.load_found_recipe(search_by, look_for, 1)
-                print(found_recipes)
+                found_recipes = self.load_found_recipe(search_by, look_for, 3)
+                # print(found_recipes)
                 if found_recipes:
                     self.load_recipe_list_with_recipes(found_recipes)
+                    # self.show_show_more_btn(True)
                 else:
-                    self.root.ids.show_more_btn.opacity = 0
-                    self.root.ids.show_more_btn.disable = True
+                    self.show_show_more_btn(False)
 
         self.root.ids.recipe_scroll.scroll_y = 1
 
@@ -233,6 +236,9 @@ class DishDossierApp(MDApp):
     def show_more_recipes(self):
         recipes_num = len(self.root.ids.recipe_list.children)
 
+        # if self.potentially_search_api:
+        #     self.search_for_recipe(self.look_for)
+        # else:
         self.on_recipe_list_select(self.selected_recipe_list)
         print(self.offset)
 
