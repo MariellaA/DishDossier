@@ -27,13 +27,6 @@
         pos_hint: {"center_x": 0.5, "center_y": 0.5}
         font_name: "fonts/athiti/Athiti-SemiBold.ttf"
 
-<RecipeItem>:
-    ImageLeftWidget:
-        id: recipe_img
-        size_hint: None, None
-        size: 150, 150
-        radius: 24
-        pos_hint: {"center_x": 0.5, "center_y": 0.5}
 
 <FilterItem>
     on_release: root.set_icon(check)
@@ -113,7 +106,7 @@
                         pos_hint: {"center_x": 0.98, "center_y": 0.5}
                         opacity: 1
                         disabled: False
-                        on_release: root.export_recipe()
+                        on_release: app.export()
 
                 MDLabel:
                     id: recipe_title
@@ -794,7 +787,7 @@
 
                             MDIconButton:
                                 icon: "camera"
-                                on_release: root.show_image_chooser()
+                                on_release: app.show_image_chooser()
 
                                 theme_text_color: "Custom"
                                 text_color: (0.65098, 0.35294, 0, 1)
@@ -804,7 +797,7 @@
                                 theme_text_color: "Custom"
                                 text_color: (0.9, 0, 0.2, 0.8)
                                 #text_color: (0.65098, 0.35294, 0, 1)
-                                on_release: root.remove_image()
+                                on_release: root.change_img("images/img.png")
 
 
                         MDBoxLayout:
@@ -843,7 +836,7 @@
                                     line_color_normal: (0.65098, 0.35294, 0, 1)
                                     line_color_focus: (0.65098, 0.35294, 0, 1)
 
-DishDossierController:
+BoxLayout:
     orientation: 'horizontal'
     spacing:1
 
@@ -866,7 +859,7 @@ DishDossierController:
             Image:
                 size_hint: None, None
                 size: 200, 80
-                source: "assets/images/logo.png"
+                source: "images/logo.png"
 
             MDBoxLayout:
                 orientation: "vertical"
@@ -982,7 +975,7 @@ DishDossierController:
                 MDScrollView:
                     id:recipe_scroll
                     padding: 50
-                    on_scroll_stop: app.show_show_more_btn(self.scroll_y)
+                    on_scroll_stop: app.show_more_btn_on_scroll(self.scroll_y)
 
                     RecipeList:
                         id: recipe_list

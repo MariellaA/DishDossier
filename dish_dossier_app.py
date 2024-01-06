@@ -11,284 +11,22 @@ from kivymd.uix.dialog import MDDialog
 from kivymd.uix.screen import MDScreen
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-
-from db_handler import DBHandler
 from kivy.config import Config
 from kivy.lang import Builder
 from kivy.uix.boxlayout import BoxLayout
 from kivymd.uix.list import OneLineAvatarListItem, MDList, OneLineAvatarIconListItem
-from recipe_api_handler import RecipeAPIHandler
+
+from views import RecipeCard, FilterItem
 
 Config.set('graphics', 'resizable', False)
-Config.set('kivy', 'window_icon', 'assets/images/start_logo.png')
-
-
-class RecipeList(MDList):
-    pass
-
-
-class RecipeCard(MDCard):
-    def __init__(self, **kwargs):
-        super(RecipeCard, self).__init__(**kwargs)
-
-
-class RecipeItem(OneLineAvatarListItem):
-    pass
-
-
-class ScreenOne(MDScreen):
-    def __init__(self, **kwargs):
-        super(ScreenOne, self).__init__(**kwargs)
-
-    def switch_on_delete_edit_btn(self, on_off):
-        if on_off is False:
-            self.ids.delete_btn.disabled = True
-            self.ids.edit_btn.disabled = True
-
-            self.ids.delete_btn.opacity = 0
-            self.ids.edit_btn.opacity = 0
-        elif on_off is True:
-            self.ids.edit_btn.opacity = 1
-            self.ids.delete_btn.opacity = 1
-
-            self.ids.edit_btn.disabled = False
-            self.ids.delete_btn.disabled = False
-
-    def switch_screen(self):
-        self.manager.current = 'screen_two'
-
-    def set_recipe_info(self, recipe):
-        self.ids.recipe_title.text = recipe.title.upper()
-        self.ids.recipe_prep_time.text = str(recipe.prep_time) if recipe.prep_time != -1 else 'n/a'
-        self.ids.recipe_cook_time.text = str(recipe.cook_time) if recipe.cook_time != -1 else 'n/a'
-        self.ids.recipe_total_time.text = str(recipe.total_cook_time) if recipe.total_cook_time != -1 else 'n/a'
-        self.ids.recipe_servings.text = str(recipe.servings) if recipe.servings != -1 else 'N/A'
-        self.ids.vegan.text_color = (0.15, 0.5, 0.12, 1) if recipe.vegan else (0.1176, 0.1176, 0.1176, 0.2)
-        self.ids.dairy_free.text_color = (0.2392, 0.2196, 0.8, 1) if recipe.dairy_free else (
-            0.1176, 0.1176, 0.1176, 0.2)
-        self.ids.gluten_free.text_color = (0.5, 0.3, 0.1, 1) if recipe.gluten_free else (0.1176, 0.1176, 0.1176, 0.2)
-        self.ids.vegetarian.text_color = (0.4, 0.6, 0, 1) if recipe.vegetarian else (0.1176, 0.1176, 0.1176, 0.2)
-        self.ids.recipe_instr.text = recipe.instructions
-
-        # Set Recipe Image and Ingredients
-        self.ids.recipe_full_image.source = recipe.image_url if recipe.image_url else 'assets/images/img.png'
-
-        # Set Image button and label
-        if recipe.favourite:
-            self.ids.favs_button.icon = "heart"
-            self.ids.favs_label.text = "Added to Favourites"
-        else:
-            self.ids.favs_button.icon = "heart-outline"
-            self.ids.favs_label.text = "Add to Favourites"
-
-        res = ""
-        for ingredient in recipe.ingredients:
-            res += f"{ingredient.ingredient}\n"
-        self.ids.recipe_ingr.text = res
-
-    def export_recipe(self):
-        recipe_data = {
-            "title": self.ids.recipe_title.text.lower(),
-            "servings": self.ids.recipe_servings.text,
-            "prep": self.ids.recipe_prep_time.text,
-            "cook_time": self.ids.recipe_cook_time.text,
-            "total_cook_time": self.ids.recipe_total_time.text,
-            "ingredients": self.ids.recipe_ingr.text.split("\n"),
-            "instructions": self.ids.recipe_instr.text,
-        }
-
-        print(recipe_data["title"].lower().replace(" ", "_"))
-
-        # Set up PDF Canvas
-        desktop_path = os.path.join(os.path.expanduser("~"), 'Desktop')
-        pdf_file_path = os.path.join(desktop_path, f"{str(recipe_data['title'].lower().replace(' ', '_'))}.pdf")
-        # pdf_file_path = f"{str(recipe_data['title'].lower().replace(' ', '_'))}.pdf"
-        c = canvas.Canvas(pdf_file_path, pagesize=letter)
-        width, height = letter
-
-        # Define initial font size and line height
-        font_size = 10
-        line_height = 15
-
-        # Function to calculate the required height for the text
-        def calculate_text_height(text, font_size):
-            return sum(c.stringWidth(line, 'Helvetica', font_size) for line in text.split('\n')) + line_height * (
-                    text.count('\n') + 1)
-
-        # Function to fit text within available space by adjusting font size
-        # def fit_text_within_space(text, max_height, initial_font_size):
-        #     current_font_size = initial_font_size
-        #     while calculate_text_height(text, current_font_size) > max_height:
-        #         current_font_size -= 1
-        #         if current_font_size <= 0:
-        #             break
-        #     return current_font_size
-
-        # Function to wrap text into multiple lines based on specified line width
-        def wrap_text(text, line_width):
-            words = text.split()
-            lines = []
-            current_line = words[0]
-            for word in words[1:]:
-                if c.stringWidth(current_line + ' ' + word, 'Helvetica', font_size) <= line_width - 40:
-                    current_line += ' ' + word
-                else:
-                    lines.append(current_line)
-                    current_line = word
-            lines.append(current_line)
-            return '\n'.join(lines)
-
-        # Write recipe details to PDF
-        c.drawString(70, height - 80, f"Title: {recipe_data['title']}")
-
-        info_text = f"Servings: {recipe_data['servings']} | Prep Time: {recipe_data['prep']} min | Cook Time: {recipe_data['cook_time']} min | Total Time: {recipe_data['total_cook_time']} min"
-        c.drawString(70, height - 100, info_text)
-
-        c.drawString(70, height - 120, "Ingredients:")
-        for i, ingredient in enumerate(recipe_data['ingredients']):
-            c.drawString(80, height - 140 - (i * 20), f"{ingredient}")
-
-        n = len(recipe_data['ingredients']) * 20
-
-        instructions_text = wrap_text(recipe_data['instructions'], width - 150)
-        lines = instructions_text.split('\n')
-
-        for i, line in enumerate(lines):
-            c.drawString(70, height - 140 - n - (i * line_height), line)
-
-        # Save the PDF
-        c.save()
-        print(f"PDF exported to {pdf_file_path}")
-
-
-class ScreenTwo(MDScreen):
-    def __init__(self, **kwargs):
-        super(ScreenTwo, self).__init__(**kwargs)
-
-    def switch_screen(self):
-        self.manager.current = 'screen_one'
-
-    # Choose an image
-    def show_image_chooser(self):
-        file_chooser = FileChooserIconView()
-        file_chooser.bind(on_submit=self.file_selected)
-
-        popup = Popup(
-            title="Select a Photo",
-            content=file_chooser,
-            size_hint=(None, None),
-            size=(900, 700),
-        )
-        popup.open()
-
-    def file_selected(self, instance, selection, touch):
-        # print(instance.ids)
-        if selection:
-            selected_file = selection[0]
-            self.ids.s2_recipe_image_display.source = selected_file
-            self.ids.s2_recipe_image_display.reload()
-
-            # Close the file chooser popup
-            instance.parent.parent.parent.dismiss()
-
-    # Delete image:
-    def remove_image(self):
-        self.ids.s2_recipe_image_display.source = "assets/images/img.png"
-        self.ids.s2_recipe_image_display.reload()
-
-    # Cancel editing or adding a recipe
-    def cancel_add_edit_recipe(self):
-        # Clear input data
-        self.ids.s2_recipe_title_input.text = ""
-        self.ids.s2_recipe_servings.text = ""
-        self.ids.s2_recipe_prep_time.text = ""
-        self.ids.s2_recipe_cook_time.text = ""
-        self.ids.s2_recipe_total_time.text = ""
-        self.ids.s2_recipe_instr.text = ""
-        self.ids.s2_recipe_image_display.source = "assets/images/img.png"
-        self.ids.vegan.active = False
-        self.ids.dairy_free.active = False
-        self.ids.gluten_free.active = False
-        self.ids.vegetarian.active = False
-        self.ids.s2_cuisine.text = ""
-        self.ids.s2_category.text = ""
-        self.ids.s2_recipe_ingr.text = ""
-
-        self.switch_screen()
-
-    def show_edit_recipe_info(self, title, servings, prep_t, cook_t, total_t, instr, img, cuisine, food_cat, vegan,
-                              dairy_free, gluten_free, vegetarian, ingr):
-        self.ids.s2_recipe_title_input.text = title
-        self.ids.s2_recipe_servings.text = str(servings) if servings != -1 else ""
-        self.ids.s2_recipe_prep_time.text = str(prep_t) if prep_t != -1 else ""
-        self.ids.s2_recipe_cook_time.text = str(cook_t) if cook_t != -1 else ""
-        self.ids.s2_recipe_total_time.text = str(total_t) if total_t != -1 else ""
-        self.ids.s2_recipe_instr.text = instr
-        self.ids.s2_recipe_image_display.source = img if img != "" else "assets/images/img.png"
-        self.ids.vegan.active = vegan
-        self.ids.dairy_free.active = dairy_free
-        self.ids.gluten_free.active = gluten_free
-        self.ids.vegetarian.active = vegetarian
-        self.ids.s2_cuisine.active = cuisine
-        self.ids.s2_category.active = food_cat
-
-        for ingredient in ingr:
-            self.ids.s2_recipe_ingr.text += ingredient.ingredient + "\n"
-        self.ids.s2_recipe_ingr.text = self.ids.s2_recipe_ingr.text[:-1]
-
-    def done_btn(self):
-        title = self.ids.s2_recipe_title_input.text
-        servings = self.ids.s2_recipe_servings.text
-        prep_t = self.ids.s2_recipe_prep_time.text if self.ids.s2_recipe_prep_time.text != "" else 0
-        cook_t = self.ids.s2_recipe_cook_time.text if self.ids.s2_recipe_cook_time.text != "" else 0
-        total_t = self.ids.s2_recipe_total_time.text if self.ids.s2_recipe_total_time.text != "" else 0
-        vegan = self.ids.vegan.active
-        dairy_free = self.ids.dairy_free.active
-        gluten_free = self.ids.gluten_free.active
-        vegetarian = self.ids.vegetarian.active
-        cuisine = self.ids.s2_cuisine.text
-        food_category = self.ids.s2_category.text
-        instr = self.ids.s2_recipe_instr.text
-
-        if self.ids.s2_recipe_image_display.source is not None:
-            image = self.ids.s2_recipe_image_display.source
-        else:
-            image = "assets/images/img.png"
-
-        ingr = self.ids.s2_recipe_ingr.text.split("\n")
-
-        if title == "" or instr == "" or ingr == [''] or (title == "" and instr == "" and ingr == ""):
-            return
-
-        return None, title, prep_t, cook_t, total_t, servings, image, False, True, instr, cuisine, food_category, vegan, vegetarian, gluten_free, dairy_free, ingr
-
-
-class FilterItem(OneLineAvatarIconListItem):
-    divider = None
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.selected = False
-        self.theme_text_color = "Custom"
-        self.text_color = (0.1176, 0.1176, 0.1176, 1)
-        self.bg_color = (0.9725, 0.902, 0.7333, 1)
-
-    def set_icon(self, instance_check):
-        if not instance_check.active:
-            instance_check.active = True  # False if instance_check.active else True
-        else:
-            instance_check.active = False
-
-
-class DishDossierController(BoxLayout):
-    pass
+Config.set('kivy', 'window_icon', 'images/start_logo.png')
 
 
 class DishDossierApp(MDApp):
-    def __init__(self):
+    def __init__(self, api_handler, db):
         super().__init__()
-        self.api_handler = RecipeAPIHandler()
-        self.db = DBHandler()
+        self.api_handler = api_handler
+        self.db = db
 
         self.selected_recipe_list = 'all_recipes'
 
@@ -340,8 +78,7 @@ class DishDossierApp(MDApp):
 
     def load_recipe_list_with_recipes(self, recipes):
         if not recipes:
-            self.root.ids.show_more_btn.opacity = 0
-            self.root.ids.show_more_btn.disable = True
+            self.show_show_more_btn(False)
         else:
             # Display the recipes (customize this part based on your UI)
             for recipe in recipes:
@@ -378,7 +115,7 @@ class DishDossierApp(MDApp):
             self.offset = 0
             self.potentially_search_api = False
             self.root.ids.recipe_scroll.scroll_y = 1
-            self.show_show_more_btn(self.root.ids.recipe_scroll.scroll_y)
+            self.show_more_btn_on_scroll(self.root.ids.recipe_scroll.scroll_y)
 
         if list == "all_recipes":
 
@@ -399,14 +136,11 @@ class DishDossierApp(MDApp):
             if self.current_recipe.original_recipe:
                 self.root.ids.screen_one.switch_on_delete_edit_btn(True)
 
+
+
         elif list == "favourites":
             self.load_recipe_list_with_recipes(self.db.get_all_favourite_recipes(self.offset, self.page_size))
             self.root.ids.screen_one.switch_on_delete_edit_btn(False)
-
-            try:
-                self.on_recipe_select(self.root.ids.recipe_list.children[-1])
-            except IndexError:
-                pass
 
         self.selected_recipe_list = list
 
@@ -443,9 +177,12 @@ class DishDossierApp(MDApp):
 
             if self.potentially_search_api:
                 found_recipes = self.load_found_recipe(search_by, look_for, 1)
-
+                print(found_recipes)
                 if found_recipes:
                     self.load_recipe_list_with_recipes(found_recipes)
+                else:
+                    self.root.ids.show_more_btn.opacity = 0
+                    self.root.ids.show_more_btn.disable = True
 
         self.root.ids.recipe_scroll.scroll_y = 1
 
@@ -455,7 +192,15 @@ class DishDossierApp(MDApp):
         if not self.current_recipe.favourite:
             self.on_recipe_list_select(self.selected_recipe_list)
 
-    def show_show_more_btn(self, scroll_y):
+    def show_show_more_btn(self, show=False):
+        if show:
+            self.root.ids.show_more_btn.opacity = 1
+            self.root.ids.show_more_btn.disable = False
+        else:
+            self.root.ids.show_more_btn.opacity = 0
+            self.root.ids.show_more_btn.disable = True
+
+    def show_more_btn_on_scroll(self, scroll_y):
         if scroll_y > 0.01:  # or not self.check_if_there_are_more_recipes_to_show():
             self.root.ids.show_more_btn.opacity = 0
             self.root.ids.show_more_btn.disable = True
@@ -492,7 +237,7 @@ class DishDossierApp(MDApp):
         print(self.offset)
 
         self.root.ids.recipe_scroll.scroll_y = 1 - (1 / recipes_num * (recipes_num - 1.5))
-        self.show_show_more_btn(self.root.ids.recipe_scroll.scroll_y)
+        self.show_more_btn_on_scroll(self.root.ids.recipe_scroll.scroll_y)
 
     # Save new/edited recipe
     def done_creating_recipe(self):
@@ -507,7 +252,7 @@ class DishDossierApp(MDApp):
             self.root.ids.screen_two.cancel_add_edit_recipe()
 
     def delete_recipe(self):
-        self.db.delete_recipe(self.current_recipe.title, self.current_recipe.instructions)
+        self.db.delete_recipe(self.current_recipe.title)  # , self.current_recipe.instructions)
 
         self.offset = 0
 
@@ -515,6 +260,11 @@ class DishDossierApp(MDApp):
         self.load_recipe_list_with_recipes(self.db.get_all_original_recipes(self.offset, self.page_size))
 
         self.on_recipe_list_select(self.selected_recipe_list)
+
+        try:
+            self.on_recipe_select(self.root.ids.recipe_list.children[0])
+        except IndexError:
+            pass
 
     # Edit original recipe
     def edit_recipe(self):
@@ -638,5 +388,83 @@ class DishDossierApp(MDApp):
 
         self.search_menu.dismiss()
 
-    def toggle_button_callback(self, instance):
-        self.search_menu.dismiss()
+    # Choose an image
+    def show_image_chooser(self):
+        file_chooser = FileChooserIconView()
+        file_chooser.bind(on_submit=self.file_selected)
+
+        popup = Popup(
+            title="Select a Photo",
+            content=file_chooser,
+            size_hint=(None, None),
+            size=(900, 700),
+        )
+        popup.open()
+
+    def file_selected(self, instance, selection, touch):
+        if selection:
+            selected_file = selection[0]
+
+            if selected_file[-4:] not in ("jpeg", ".jpg", ".png"):
+                pass
+            else:
+                self.root.ids.screen_two.change_img(selected_file)
+
+                # Close the file chooser popup
+                instance.parent.parent.parent.dismiss()
+
+    def export(self):
+        recipe_data = self.root.ids.screen_one.export_recipe_data()
+
+        desktop_path = os.path.join(os.path.expanduser("~"), 'Desktop')
+        pdf_file_path = os.path.join(desktop_path, f"{str(recipe_data['title'].lower().replace(' ', '_'))}.pdf")
+
+        # Set up PDF Canvas
+        c = canvas.Canvas(pdf_file_path, pagesize=letter)
+        width, height = letter
+
+        # Define initial font size and line height
+        font_size = 10
+        line_height = 12
+
+        # Function to wrap text into multiple lines based on specified line width
+        def wrap_text(text, line_width):
+            sentences = text.split("\n")
+            lines = []
+            for sentence in sentences:
+                if sentence == "":
+                    continue
+
+                text = sentence.split()
+                current_line = text[0]
+
+                for word in text[1:]:
+                    if c.stringWidth(current_line + ' ' + word, 'Helvetica', font_size) <= line_width - 40:
+                        current_line += ' ' + word
+                    else:
+                        lines.append(current_line)
+                        current_line = word
+
+                lines.append(current_line)
+            return lines
+
+        # Write recipe details to PDF
+        c.drawString(70, height - 80, f"Title: {recipe_data['title']}")
+
+        info_text = f"Servings: {recipe_data['servings']} | Prep Time: {recipe_data['prep']} min | Cook Time: {recipe_data['cook_time']} min | Total Time: {recipe_data['total_cook_time']} min"
+        c.drawString(70, height - 100, info_text)
+
+        c.drawString(70, height - 120, "Ingredients:")
+        for i, ingredient in enumerate(recipe_data['ingredients']):
+            c.drawString(80, height - 140 - (i * line_height), f"{ingredient}")
+
+        n = len(recipe_data['ingredients']) * line_height
+
+        instructions_text = wrap_text(recipe_data['instructions'], width - 150)
+
+        for i, line in enumerate(instructions_text):
+            c.drawString(70, height - 140 - n - (i * line_height), line)
+
+        # Save the PDF
+        c.save()
+        print(f"PDF exported to {pdf_file_path}")

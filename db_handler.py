@@ -5,50 +5,13 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker, aliased
 import sqlite3 as sq
 
-Base = declarative_base()
-
-recipes_ingredients = Table(
-    'recipes_ingredients',
-    Base.metadata,
-    Column('recipe_id', Integer, ForeignKey('recipes.recipe_id')),
-    Column('ingredient_id', Integer, ForeignKey('ingredients.ingredient_id'))
-)
-
-
-class Recipe(Base):
-    __tablename__ = 'recipes'
-    recipe_id = Column(Integer, primary_key=True, autoincrement=True)
-    recipe_api_id = Column(Integer, unique=True)
-    title = Column(String, nullable=False)
-    prep_time = Column(Integer)
-    cook_time = Column(Integer)
-    total_cook_time = Column(Integer)
-    servings = Column(Integer)
-    image_url = Column(String)
-    favourite = Column(Boolean, default=False)
-    original_recipe = Column(Boolean, default=False)
-    instructions = Column(Text)
-    cuisine = Column(Text)
-    food_category = Column(Text)
-    vegan = Column(Boolean, default=False)
-    vegetarian = Column(Boolean, default=False)
-    gluten_free = Column(Boolean, default=False)
-    dairy_free = Column(Boolean, default=False)
-    ingredients = relationship('Ingredient', secondary=recipes_ingredients, cascade='all')
-
-
-class Ingredient(Base):
-    __tablename__ = 'ingredients'
-    ingredient_id = Column(Integer, primary_key=True, autoincrement=True)
-    ingredient_api_id = Column(Integer, unique=True, nullable=True)
-    ingredient = Column(String)
+from models import Base, Recipe, Ingredient, recipes_ingredients
 
 
 class DBHandler:
     def __init__(self):
         self._path = "sqlite:///" + os.path.join(os.path.dirname(os.path.abspath(__file__)), "dish_dossier_db.db")
-        # print(self._path)
-        self.engine = create_engine(self._path)  #, echo=True)
+        self.engine = create_engine(self._path)  # , echo=True)
         self.create_tables()
         self.session = sessionmaker(bind=self.engine)()
 
@@ -86,57 +49,68 @@ class DBHandler:
 
             # Check for existing ingredients and add only new ones
             for ingredient_info in ingredients_data:
-                # print(f"DB ADDING RECIPE INGR {ingredient_info}")
                 try:
-                    if not original_recipe:
-                        # print("Not original")
-                        ingredient_api_id = ingredient_info['id']
-                        ingredient = (
-                            self.session.query(Ingredient)
-                            .filter_by(ingredient_api_id=ingredient_api_id)
-                            .first()
-                        )
-                    else:
-                        # print("Original")
-                        ingredient = (
-                            self.session.query(Ingredient).filter_by(ingredient=ingredient_info).first()
-                        )
+                    ingredient = self.find_ingredient(original_recipe, ingredient_info)
 
                     if not ingredient:
-                        # print("Ingr doestnt exist")
-                        if not original_recipe:
-                            ingredient = Ingredient(
-                                ingredient_api_id=ingredient_info['id'],
-                                ingredient=ingredient_info['originalString'] if 'originalString' in ingredient_info else
-                                ingredient_info['original']
-                            )
-                        else:
-                            print("making ingredients for original recipe")
-                            ingredient = Ingredient(
-                                ingredient_api_id=None,
-                                ingredient=ingredient_info
-                            )
-                        print(f"NEW INGREDIENT: {ingredient}")
+                        ingredient = self.create_ingredient(original_recipe, ingredient_info)
                         self.session.add(ingredient)
-                        # self.session.commit()
 
                     recipe.ingredients.append(ingredient)
                     self.session.commit()
+
                 except IntegrityError:
+                    # Handle integrity error (duplicate API ID for ingredients)
                     print("ingr rollback")
-                    # Handle integrity error (e.g., duplicate API ID for ingredients)
                     self.session.rollback()
 
             return recipe  # Return the added recipe
 
         except IntegrityError:
+            # Handle integrity error (duplicate API ID for recipes)
             print("recipe rollback")
-            # Handle integrity error (e.g., duplicate API ID for recipes)
             self.session.rollback()
-            existing_recipe = self.session.query(Recipe).filter_by(recipe_api_id=recipe_api_id).first()
+            existing_recipe = self.get_recipe(
+                recipe_api_id)  # self.session.query(Recipe).filter_by(recipe_api_id=recipe_api_id).first()
+
             if existing_recipe:
                 print(f"Recipe with recipe_api_id {recipe_api_id} already exists.")
                 return existing_recipe  # Return existing recipe instead of adding a new one
+
+    def create_ingredient(self, original, ingredient_info):
+        if not original:
+            ingredient = Ingredient(
+                ingredient_api_id=ingredient_info['id'],
+                ingredient=ingredient_info['originalString'] if 'originalString' in ingredient_info else
+                ingredient_info['original']
+            )
+        else:
+            ingredient = Ingredient(
+                ingredient_api_id=None,
+                ingredient=ingredient_info
+            )
+
+        if ingredient:
+            return ingredient
+        return
+
+    def find_ingredient(self, original, ingredient_info):
+        if not original:
+            ingredient_api_id = ingredient_info['id']
+            ingredient = (
+                self.session.query(Ingredient)
+                .filter_by(ingredient_api_id=ingredient_api_id)
+                .first()
+            )
+        else:
+            ingredient = (
+                self.session.query(Ingredient).filter_by(ingredient=ingredient_info).first()
+            )
+
+        if ingredient:
+            return ingredient
+
+        return
 
     def get_recipes(self, offset, page_size):
         recipes = self.session.query(Recipe).filter_by(original_recipe=False, ).offset(offset).limit(page_size).all()
@@ -152,18 +126,18 @@ class DBHandler:
 
     def search_for_recipes(self, criteria, search_text, original, favs):
         # Build the dynamic OR/AND clauses for each criterion
-        or_clauses = []
+        # or_clauses = []
         and_clauses = []
 
         for criterion in criteria:
             if criterion == "title":
-                or_clauses.append(Recipe.title.ilike(f'%{search_text}%'))
+                and_clauses.append(Recipe.title.ilike(f'%{search_text}%'))
             elif criterion == "ingredient":
-                or_clauses.append(Ingredient.ingredient.ilike(f'%{search_text}%'))
+                and_clauses.append(Ingredient.ingredient.ilike(f'%{search_text}%'))
             elif criterion == "cuisine":
-                or_clauses.append(Recipe.cuisine.ilike(f'%{search_text}%'))
+                and_clauses.append(Recipe.cuisine.ilike(f'%{search_text}%'))
             elif criterion == "category":
-                or_clauses.append(Recipe.food_category.ilike(f'%{search_text}%'))
+                and_clauses.append(Recipe.food_category.ilike(f'%{search_text}%'))
             elif criterion == "vegan":
                 and_clauses.append(Recipe.vegan)
             elif criterion == "dairy-free":
@@ -179,16 +153,16 @@ class DBHandler:
             and_clauses.append(Recipe.favourite)
 
         # Combine the OR clauses with an AND clause
-        or_combined_conditions = or_(*or_clauses)
+        # or_combined_conditions = or_(*or_clauses)
         and_combined_conditions = and_(*and_clauses)
-        final_combined_condition = and_(or_combined_conditions, and_combined_conditions)
+        # final_combined_condition = and_(or_combined_conditions, and_combined_conditions)
 
         # Apply the dynamic clause to the base query
         recipes = (
             self.session.query(Recipe)
             .outerjoin(recipes_ingredients, Recipe.recipe_id == recipes_ingredients.c.recipe_id)
             .outerjoin(Ingredient, recipes_ingredients.c.ingredient_id == Ingredient.ingredient_id)
-            .filter(final_combined_condition)
+            .filter(and_combined_conditions)
             .all()
         )
 
@@ -209,15 +183,11 @@ class DBHandler:
         self.session.commit()
 
     # Delete an original recipe
-    def delete_recipe(self, title, instr):
+    def delete_recipe(self, title):
         # Retrieve the recipe with the specified title
-        recipe = self.session.query(Recipe).filter_by(original_recipe=True, title=title, instructions=instr, ).first()
+        recipe = self.get_original_recipe(title)
 
         if recipe:
-            # Delete the associated ingredients
-            for ingredient in recipe.ingredients:
-                self.session.delete(ingredient)
-
             # Delete the recipe itself
             self.session.delete(recipe)
             self.session.commit()
@@ -242,15 +212,13 @@ class DBHandler:
         recipe.vegetarian = vegetarian
         recipe.instructions = instr
 
-        print("edit_recipe db")
-        print(image)
-
         new_ingredients = []
         for ingredient_name in ingr:
-            ingredient = self.session.query(Ingredient).filter_by(ingredient=ingredient_name).first()
+            ingredient = self.find_ingredient(True,
+                                              ingredient_name)  # self.session.query(Ingredient).filter_by(ingredient=ingredient_name).first()
 
             if not ingredient:
-                ingredient = Ingredient(ingredient=ingredient_name)
+                ingredient = self.create_ingredient(True, ingredient_name)  # Ingredient(ingredient=ingredient_name)
 
             new_ingredients.append(ingredient)
 
