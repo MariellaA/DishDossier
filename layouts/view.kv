@@ -71,7 +71,6 @@
                     size_hint: None, None
                     pos_hint: {"center_x": 0.75, "center_y": 0.5}
                     height: dp(20)
-                    #padding: (0, 0, 0, 0)
 
                     MDIconButton:
                         id: edit_btn
@@ -79,10 +78,10 @@
                         icon: "pencil"
                         theme_icon_color: "Custom"
                         icon_color: (0.65098, 0.35294, 0, 1)
-                        pos_hint: {"right": 0.78, "center_y": 0.5}
-                        opacity: 1
+                        pos_hint: {"center_x": 0.68, "center_y": 0.1}
+                        opacity: 0
                         on_release: app.edit_recipe()
-                        disabled: False
+                        disabled: True
 
                     MDIconButton:
                         id: delete_btn
@@ -91,8 +90,8 @@
                         theme_icon_color: "Custom"
                         icon_color: (0.9, 0.2, 0.1, 0.8)
                         size_hint: None, None
-                        pos_hint: {"center_x": 0.88, "center_y": 0.5}
-                        opacity: 1
+                        pos_hint: {"center_x": 0.78, "center_y": 0.1}
+                        opacity: 0
                         on_release: app.delete_recipe()
                         disabled: True
 
@@ -103,7 +102,7 @@
                         theme_icon_color: "Custom"
                         icon_color: (0.1176, 0.1176, 0.1176, 1)
                         size_hint: None, None
-                        pos_hint: {"center_x": 0.98, "center_y": 0.5}
+                        pos_hint: {"left": 0.98, "center_y": 0.1}
                         opacity: 1
                         disabled: False
                         on_release: app.export()
@@ -121,7 +120,10 @@
                     pos_hint: {"center_x": 0.5, "center_y": 0.5}
 
                 MDBoxLayout:
-                    size_hint: 0.26, 0.1
+                    size_hint: None, None
+                    width: dp(120)
+                    height: dp(38)
+                    #size_hint: 0.26, 0.1
                     md_bg_color: (0.2392, 0.2196, 0.1725, 0.1)
                     radius: 35
 
@@ -304,7 +306,7 @@
                     box_radius: [24, 24, 24, 24]
                     box_color: 0, 0, 0, .2
                     pos_hint: {"center_x": .5, "top": 1}
-                    size_hint: None, None
+                    size_hint_y: None
                     width: "320dp"
                     height: "250dp"
 
@@ -945,8 +947,10 @@ BoxLayout:
                     mode: "round"
                     theme_text_color: "Custom"
                     fill_color_normal: (0.9765, 0.9686, 0.8745, 1)  ### OFF WHITE
+                    fill_color_focus: (0.9765, 0.9686, 0.8745, 1)  ### OFF WHITE
                     hint_text_color_normal: 0.2392, 0.2196, 0.1725, 1
                     text_color_focus: 0.2392, 0.2196, 0.1725, 1
+                    text_color_normal: 0.2392, 0.2196, 0.1725, 1
                     line_color_focus: (0.65098, 0.35294, 0, 1)
                     line_color_normal: (0.65098, 0.35294, 0, 1)
                     #text_color: 0.2392, 0.2196, 0.1725, 1 ### BROWN

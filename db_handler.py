@@ -21,7 +21,11 @@ class DBHandler:
     def add_recipe(self, recipe_api_id, title, prep_time, cook_time, total_cook_time,
                    servings, image_url, favourite, original_recipe, instructions, cuisine,
                    food_category, vegan, vegetarian, gluten_free, dairy_free, ingredients_data):
-        try:
+        # try:
+        existing_recipe = self.get_recipe(
+                recipe_api_id)
+
+        if not existing_recipe or original_recipe:
             # Create a Recipe object
             recipe = Recipe(
                 title=title,
@@ -66,16 +70,16 @@ class DBHandler:
 
             return recipe  # Return the added recipe
 
-        except IntegrityError:
-            # Handle integrity error (duplicate API ID for recipes)
-            print("recipe rollback")
-            self.session.rollback()
-            existing_recipe = self.get_recipe(
-                recipe_api_id)  # self.session.query(Recipe).filter_by(recipe_api_id=recipe_api_id).first()
-
-            if existing_recipe:
-                print(f"Recipe with recipe_api_id {recipe_api_id} already exists.")
-                return existing_recipe  # Return existing recipe instead of adding a new one
+        # except IntegrityError:
+        #     # Handle integrity error (duplicate API ID for recipes)
+        #     print("recipe rollback")
+        #     self.session.rollback()
+        #     existing_recipe = self.get_recipe(
+        #         recipe_api_id)  # self.session.query(Recipe).filter_by(recipe_api_id=recipe_api_id).first()
+        #
+        #     if existing_recipe:
+        #         print(f"Recipe with recipe_api_id {recipe_api_id} already exists.")
+        #         return  #existing_recipe  # Return existing recipe instead of adding a new one
 
     def create_ingredient(self, original, ingredient_info):
         if not original:
@@ -124,9 +128,9 @@ class DBHandler:
         recipes = self.session.query(Recipe).filter_by(original_recipe=True, ).offset(offset).limit(page_size).all()
         return recipes
 
-    def search_for_recipes(self, criteria, search_text, original, favs):
+    def search_for_recipes(self, criteria, search_text, original, favs, strict):
         # Build the dynamic OR/AND clauses for each criterion
-        # or_clauses = []
+        or_clauses = []
         and_clauses = []
 
         for criterion in criteria:
@@ -150,19 +154,22 @@ class DBHandler:
         if original:
             and_clauses.append(Recipe.original_recipe)
         elif favs:
-            and_clauses.append(Recipe.favourite)
+            if strict:
+                and_clauses.append(Recipe.favourite)
+            else:
+                or_clauses.append(Recipe.favourite)
 
         # Combine the OR clauses with an AND clause
-        # or_combined_conditions = or_(*or_clauses)
+        or_combined_conditions = or_(*or_clauses)
         and_combined_conditions = and_(*and_clauses)
-        # final_combined_condition = and_(or_combined_conditions, and_combined_conditions)
+        final_combined_condition = and_(or_combined_conditions, and_combined_conditions)
 
         # Apply the dynamic clause to the base query
         recipes = (
             self.session.query(Recipe)
             .outerjoin(recipes_ingredients, Recipe.recipe_id == recipes_ingredients.c.recipe_id)
             .outerjoin(Ingredient, recipes_ingredients.c.ingredient_id == Ingredient.ingredient_id)
-            .filter(and_combined_conditions)
+            .filter(final_combined_condition)
             .all()
         )
 

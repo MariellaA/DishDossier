@@ -13,8 +13,6 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from kivy.config import Config
 from kivy.lang import Builder
-from kivy.uix.boxlayout import BoxLayout
-from kivymd.uix.list import OneLineAvatarListItem, MDList, OneLineAvatarIconListItem
 
 from views import RecipeCard, FilterItem
 
@@ -61,11 +59,14 @@ class DishDossierApp(MDApp):
 
     def load_random_recipe(self, recipe_count):
         recipes_data = self.api_handler.load_random_recipes_from_api(recipe_count)
+        recipes = []
 
         for recipe_info in recipes_data:
             recipe_exists = self.db.add_recipe(**recipe_info)
 
-            print(f"Recipe_ID: {recipe_exists}")
+            if recipe_exists:
+                recipes.append(recipe_exists)
+        return recipes
 
     def load_found_recipe(self, search_by, look_for, recipe_count):
         found_recipes = self.api_handler.find_recipe_from_api(search_by, look_for, recipe_count)
@@ -73,7 +74,9 @@ class DishDossierApp(MDApp):
 
         for recipe_info in found_recipes:
             recipe_exists = self.db.add_recipe(**recipe_info)
-            recipes.append(recipe_exists)
+
+            if recipe_exists:
+                recipes.append(recipe_exists)
 
         return recipes
 
@@ -90,6 +93,9 @@ class DishDossierApp(MDApp):
                 recipe_card.bind(on_release=self.on_recipe_select)
 
                 self.root.ids.recipe_list.add_widget(recipe_card)
+
+                if self.offset == 0:
+                    self.root.ids.recipe_scroll.scroll_y = 1
 
                 self.offset += 1
 
@@ -115,15 +121,37 @@ class DishDossierApp(MDApp):
             self.root.ids.recipe_list.clear_widgets()
             self.offset = 0
             self.potentially_search_api = False
+            self.root.ids.search_text.text = ""
             self.root.ids.recipe_scroll.scroll_y = 1
             self.show_more_btn_on_scroll(self.root.ids.recipe_scroll.scroll_y)
 
         if list == "all_recipes":
 
-            if not self.check_if_there_are_more_recipes_to_show():
-                self.load_random_recipe(6)
+            self.potentially_search_api = True
+            # print(f"SEARCH BAR CONTENT {self.root.ids.search_text.text}")
 
-            self.load_recipe_list_with_recipes(self.db.get_recipes(self.offset, self.page_size))
+            if self.root.ids.search_text.text != "":
+                print("SEARCH API ON_RECIPE_LIST_SELECT")
+                recipes = self.search_filtered_recipes_from_db(self.get_search_criteria(),
+                                                               self.root.ids.search_text.text,
+                                                               False, True, False)
+                print(recipes)
+                if not recipes:
+                    print("NO RECIPES IN DB ON_RECIPE_LIST_SELECT")
+                    found_recipes = self.search_filtered_recipes_from_api(self.get_search_criteria(),
+                                                                          self.root.ids.search_text.text, 3)
+
+                    if found_recipes:
+                        self.load_recipe_list_with_recipes(found_recipes)
+            else:
+                if not self.check_if_there_are_more_recipes_to_show():
+                    # print("LOADING RANDOM ON_RECIPE_LIST_SELECT")
+                    random_recipes = self.load_random_recipe(6)
+
+                    if random_recipes:
+                        self.load_recipe_list_with_recipes(random_recipes)
+                else:
+                    self.load_recipe_list_with_recipes(self.db.get_recipes(self.offset, self.page_size))
             self.root.ids.screen_one.switch_on_delete_edit_btn(False)
 
             try:
@@ -143,11 +171,23 @@ class DishDossierApp(MDApp):
 
         self.selected_recipe_list = list
 
-    def search_for_recipe(self, look_for):
+    def search_filtered_recipes_from_api(self, search_by, look_for, recipe_count):
+        found_recipes = self.load_found_recipe(search_by, look_for, recipe_count)
 
-        self.look_for = look_for
-        self.root.ids.search_text.text = ""
+        if found_recipes:
+            return found_recipes
 
+        self.show_show_more_btn(False)
+        return
+
+    def search_filtered_recipes_from_db(self, search_by, look_for, original, favs, strict):
+        recipes = self.db.search_for_recipes(search_by, look_for, original, favs, strict)
+
+        if recipes:
+            return recipes
+        return
+
+    def get_search_criteria(self):
         search_by = []
 
         if self.search_selection:
@@ -156,36 +196,39 @@ class DishDossierApp(MDApp):
                     search_by.append(criteria[0])
         else:
             search_by.append("title")
+        return search_by
+
+    def search_for_recipe(self, look_for):
+        search_by = self.get_search_criteria()
 
         original = False
         favs = False
+        strict = False
 
         if self.selected_recipe_list == "my_recipes":
             original = True
         elif self.selected_recipe_list == "favourites":
             favs = True
-        elif self.selected_recipe_list == "all_recipes":
-            self.potentially_search_api = True
+            strict = True
 
-        recipes = self.db.search_for_recipes(search_by, look_for, original, favs)
+        recipes = self.search_filtered_recipes_from_db(search_by, look_for, original, favs, strict)
 
         if recipes:
             self.root.ids.recipe_list.clear_widgets()
+            self.offset = 0
             self.load_recipe_list_with_recipes(recipes)
         else:
             self.root.ids.recipe_list.clear_widgets()
-            # self.offset = 0
+            self.offset = 0
+            self.root.ids.recipe_scroll.scroll_y = 1
 
             if self.potentially_search_api:
-                found_recipes = self.load_found_recipe(search_by, look_for, 3)
-                # print(found_recipes)
+                found_recipes = self.search_filtered_recipes_from_api(search_by, look_for, 3)
+
                 if found_recipes:
                     self.load_recipe_list_with_recipes(found_recipes)
+                    print("show btn still remains")
                     # self.show_show_more_btn(True)
-                else:
-                    self.show_show_more_btn(False)
-
-        self.root.ids.recipe_scroll.scroll_y = 1
 
     def add_or_remove_from_favourites(self):
         self.db.change_recipe_favourite_value(self.current_recipe)
@@ -208,11 +251,9 @@ class DishDossierApp(MDApp):
             return
 
         elif scroll_y < 0.01:
-            # print("SCROOOL")
             if not self.check_if_there_are_more_recipes_to_show() and self.selected_recipe_list != "all_recipes":
-                # if there are no more recipes - load 6 new random from api
-                print("No more recipes. Load more")
                 return
+
             self.root.ids.show_more_btn.opacity = 1
             self.root.ids.show_more_btn.disable = False
 
@@ -234,9 +275,6 @@ class DishDossierApp(MDApp):
     def show_more_recipes(self):
         recipes_num = len(self.root.ids.recipe_list.children)
 
-        # if self.potentially_search_api:
-        #     self.search_for_recipe(self.look_for)
-        # else:
         self.on_recipe_list_select(self.selected_recipe_list)
         print(self.offset)
 
