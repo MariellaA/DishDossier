@@ -39,7 +39,7 @@
         on_active: self.color_inactive = (0.65098, 0.35294, 0, 0.9)
 
 <DialogContent>
-    name: "recipe_url"
+    name: "window_input"
     id: dialog
 
     orientation: "vertical"
@@ -49,9 +49,9 @@
 
 
     MDTextField:
-        id: recipe_url
+        id: window_input
 
-        hint_text: "Add URL here"
+        #hint_text: "Add URL here"
         theme_text_color: "Custom"
         hint_text_color_normal: (0.9765, 0.9686, 0.8745, 0.6)
         hint_text_color_focus: (0.9765, 0.9686, 0.8745, 0.6)
@@ -121,14 +121,14 @@
                     MDIconButton:
                         id: export_btn
 
-                        icon: "file-export-outline"
+                        icon: "export-variant"
                         theme_icon_color: "Custom"
                         icon_color: (0.1176, 0.1176, 0.1176, 1)
                         size_hint: None, None
                         pos_hint: {"left": 0.98, "center_y": 0.1}
                         opacity: 1
                         disabled: False
-                        on_release: app.export()
+                        on_release: app.export_menu.open()
 
                 MDLabel:
                     id: recipe_title

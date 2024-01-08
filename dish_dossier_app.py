@@ -1,4 +1,7 @@
 import os
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 from kivy.core.window import Window
 from kivy.metrics import dp
@@ -32,13 +35,15 @@ class DishDossierApp(MDApp):
 
         self.selected_recipe_list = 'all_recipes'
 
-        self.current_recipe = None
         self.search_menu = None
         self.add_menu = None
         self.url_window = None
+        self.export_menu = None
+        self.export_window = None
+        self.current_recipe = None
         self.potentially_search_api = False
-        self.search_selection = []
 
+        self.search_selection = []
         self.offset = 0
         self.page_size = 6
         self.look_for = ""
@@ -64,7 +69,7 @@ class DishDossierApp(MDApp):
         return Builder.load_file('layouts/view.kv')
 
     def on_start(self):
-        items = [
+        add_items = [
             {"icon": "pencil-plus-outline",
              "viewclass": "MDRectangleFlatIconButton",
              "text": "Manually",
@@ -85,14 +90,68 @@ class DishDossierApp(MDApp):
              },
         ]
 
+        export_items = [
+            {"icon": "file-export-outline",
+             "viewclass": "MDRectangleFlatIconButton",
+             "text": "Export as PDF",
+             "on_release": lambda: (self.export(), self.export_menu.dismiss()),
+             "line_color": (0, 0, 0, 0),
+             "theme_text_color": "Custom",
+             "text_color": (0.9765, 0.9686, 0.8745, 1),
+             "icon_color": (0.65098, 0.35294, 0, 1)
+             },
+            {"icon": "email-fast-outline",
+             "viewclass": "MDRectangleFlatIconButton",
+             "text": "Send by Email",
+             "on_release": lambda: (self.show_email_input_window(), self.export_menu.dismiss()),
+             "line_color": (0, 0, 0, 0),
+             "theme_text_color": "Custom",
+             "icon_color": (0.65098, 0.35294, 0, 1),
+             "text_color": (0.9765, 0.9686, 0.8745, 1),
+             },
+        ]
+
         self.add_menu = MDDropdownMenu(
             caller=self.root.ids.drop_item,
-            items=items,
+            items=add_items,
             width_mult=2,
             background_color=(0.2392, 0.2196, 0.1725, 1),
             size_hint=(None, None),
             max_height=dp(75),
         )
+
+        self.export_menu = MDDropdownMenu(
+            caller=self.root.ids.screen_one.ids.export_btn,
+            items=export_items,
+            width_mult=2,
+            background_color=(0.2392, 0.2196, 0.1725, 1),
+            size_hint=(None, None),
+            max_height=dp(75),
+        )
+
+    def send_recipe_email(self):
+        print('Email sent successfully!')
+
+    def write_an_email(self, instance):
+        recipe_info = self.root.ids.screen_one.export_recipe_data()
+
+        recipe_title = recipe_info['title']
+        recipe_content = [f"Servings: {recipe_info['servings']}",
+                          f"Prep: {recipe_info['prep']}\n",
+                          f"Cook: {recipe_info['servings']}\n",
+                          f"Total: {recipe_info['total_cook_time']}\n",
+                          f"Ingredients: {', '.join(recipe_info['ingredients'])}\n",
+                          f"Instructions:\n"]
+
+        for instr in recipe_info["instructions"]:
+            recipe_content.append(instr)
+
+        recipient_email = self.export_window.content_cls.ids.window_input.text
+
+        self.send_recipe_email()
+        # self.send_recipe_email(recipe_title, recipe_content, recipient_email)
+        self.export_window.content_cls.ids.window_input.text = ""
+        self.export_window.dismiss()
 
     def load_random_recipe(self, recipe_count):
         recipes_data = self.api_handler.load_random_recipes_from_api(recipe_count)
@@ -382,8 +441,8 @@ class DishDossierApp(MDApp):
             self.root.ids.screen_two.switch_screen()
 
     def get_recipe_through_url(self, instance):
-        print(self.url_window.content_cls.ids.recipe_url.text)
-        url = self.url_window.content_cls.ids.recipe_url.text
+        print(self.url_window.content_cls.ids.window_input.text)
+        url = self.url_window.content_cls.ids.window_input.text
         recipe = None
         recipes = []
 
@@ -396,15 +455,13 @@ class DishDossierApp(MDApp):
             for rec in extracted_data:
                 print("add")
                 recipe = self.db.add_recipe(**rec)
-                print(rec)
-                print("get thr url")
 
                 if recipe:
-                    print(recipe.title)
+                    # print(recipe.title)
                     recipes.append(recipe)
 
             self.load_recipe_list_with_recipes(recipes)
-            self.url_window.content_cls.ids.recipe_url.text = ""
+            self.url_window.content_cls.ids.window_input.text = ""
             self.url_window.dismiss()
         else:
             return
@@ -413,7 +470,7 @@ class DishDossierApp(MDApp):
     def show_url_window(self):
         if not self.url_window:
             self.url_window = MDDialog(
-                title="Add recipe URL",
+                title="Provide recipe URL",
                 type="custom",
                 content_cls=DialogContent(),
                 buttons=[
@@ -434,6 +491,32 @@ class DishDossierApp(MDApp):
             )
 
         self.url_window.open()
+
+    # Create the popup menu for recipe url input
+    def show_email_input_window(self):
+        if not self.export_window:
+            self.export_window = MDDialog(
+                title="Provide recipient's email address",
+                type="custom",
+                content_cls=DialogContent(),
+                buttons=[
+                    MDFlatButton(
+                        text="CANCEL",
+                        theme_text_color="Custom",
+                        text_color=(0.65098, 0.35294, 0, 1),
+                        on_release=lambda instance: self.close_export_window(instance),
+                    ),
+                    MDRaisedButton(
+                        text="OK",
+                        theme_text_color="Custom",
+                        md_bg_color=(0.65098, 0.35294, 0, 1),
+                        text_color=(0.9765, 0.9686, 0.8745, 1),
+                        on_release=lambda instance: self.write_an_email(instance),
+                    ), ],
+                md_bg_color=(0.2392, 0.2196, 0.1725, 0.6),
+            )
+
+        self.export_window.open()
 
     # Create the filter menu
     def show_search_by_options(self):
@@ -504,10 +587,15 @@ class DishDossierApp(MDApp):
 
         self.search_menu.dismiss()
 
-    # Closes the url popup menu without saving the changes
+    # Closes the url popup window without saving the changes
     def close_url_window(self, instance):
-        self.url_window.content_cls.ids.recipe_url.text = ""
+        self.url_window.content_cls.ids.window_input.text = ""
         self.url_window.dismiss()
+
+    # Closes the email popup window without saving the changes
+    def close_export_window(self, instance):
+        self.export_window.content_cls.ids.window_input.text = ""
+        self.export_window.dismiss()
 
     # Closes the dialog and saves the changes
     def ok_search_by_menu(self, instance):
