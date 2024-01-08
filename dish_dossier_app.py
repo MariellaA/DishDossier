@@ -225,8 +225,9 @@ class DishDossierApp(MDApp):
 
             self.potentially_search_api = True
             # print(f"SEARCH BAR CONTENT {self.root.ids.search_text.text}")
+            search_criteria = self.get_search_criteria()
 
-            if self.root.ids.search_text.text != "":
+            if self.root.ids.search_text.text != "" or search_criteria != ["title"]:
                 print("SEARCH API ON_RECIPE_LIST_SELECT")
                 recipes = self.search_filtered_recipes_from_db(self.get_search_criteria(),
                                                                self.root.ids.search_text.text,
