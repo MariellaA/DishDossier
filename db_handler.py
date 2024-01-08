@@ -1,9 +1,8 @@
 import os
 
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Table, Boolean, Text, or_, and_
+from sqlalchemy import create_engine, or_, and_
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import declarative_base, relationship, sessionmaker, aliased
-import sqlite3 as sq
+from sqlalchemy.orm import sessionmaker
 
 from models import Base, Recipe, Ingredient, recipes_ingredients
 

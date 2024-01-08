@@ -1,10 +1,4 @@
 import os
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from pprint import pprint
-
-import sib_api_v3_sdk
 from kivy.core.window import Window
 from kivy.metrics import dp
 from kivy.uix.filechooser import FileChooserIconView
@@ -12,18 +6,12 @@ from kivy.uix.popup import Popup
 from kivy.uix.screenmanager import NoTransition
 from kivymd.app import MDApp
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
-from kivymd.uix.card import MDCard
 from kivymd.uix.dialog import MDDialog
-from kivymd.uix.label import MDLabel
 from kivymd.uix.menu import MDDropdownMenu
-from kivymd.uix.screen import MDScreen
-from kivymd.uix.textfield import MDTextField
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from kivy.config import Config
 from kivy.lang import Builder
-from sib_api_v3_sdk.rest import ApiException
-
 from views import RecipeCard, FilterItem, DialogContent
 
 Config.set('graphics', 'resizable', False)
@@ -285,13 +273,18 @@ class DishDossierApp(MDApp):
             steps_count += 1
 
         image = response["recipe"]["image"][0]
+
+        try:
+            cook_t = response["recipe"]["cookTimeOriginalFormat"][2:-1]
+        except KeyError:
+            cook_t = "0"
         # print(image)
 
         recipe_info = {
             "recipe_api_id": None,
             "title": response["recipe"]["name"],
             "prep_time": response["recipe"]["prepTimeOriginalFormat"][2:-1],
-            "cook_time": response["recipe"]["cookTimeOriginalFormat"][2:-1],
+            "cook_time": cook_t,
             "total_cook_time": response["recipe"]["totalTimeOriginalFormat"][2:-1],
             "servings": response["recipe"]["recipeYield"],
             "image_url": image,
@@ -540,9 +533,9 @@ class DishDossierApp(MDApp):
         recipes = []
 
         if url != "":
-            # print("EXTRACT")
+            print("EXTRACT")
             extracted_recipe = self.api_handler.extract_recipe_from_website(url)
-            # print(extracted_recipe)
+            print(extracted_recipe)
             extracted_recipe_data = self.get_recipe_extractor_data(extracted_recipe)
             print(extracted_recipe_data)
 
@@ -584,7 +577,7 @@ class DishDossierApp(MDApp):
 
         self.url_window.open()
 
-    # Create the popup menu for recipe url input
+    # Create the popup window for email input
     def show_email_input_window(self):
         if not self.export_window:
             self.export_window = MDDialog(
