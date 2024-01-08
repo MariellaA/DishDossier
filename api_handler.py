@@ -3,7 +3,8 @@ import requests
 
 class RecipeAPIHandler():
     def __init__(self):
-        self.headers = {"X-RapidAPI-Key": self.load_api_key(),
+        self.api_key = self.load_api_key()
+        self.headers = {"X-RapidAPI-Key": self.api_key,
                         "X-RapidAPI-Host": "spoonacular-recipe-food-nutrition-v1.p.rapidapi.com"}
 
     @staticmethod
@@ -11,6 +12,24 @@ class RecipeAPIHandler():
         with open('api_key.txt', 'r') as file:
             key = file.read()
         return key
+
+    def extract_recipe_from_website(self, url):
+        print(url)
+        api_url = "https://cookr-recipe-parser.p.rapidapi.com/getRecipe"
+
+        querystring = {"source": url}
+
+        headers = {
+            "X-RapidAPI-Key": self.api_key,
+            "X-RapidAPI-Host": "cookr-recipe-parser.p.rapidapi.com"
+        }
+
+        response = requests.get(api_url, headers=headers, params=querystring)
+
+        print(response.json())
+        extract_data = self.get_recipe_extractor_data(response.json())
+        print(extract_data)
+        return extract_data
 
     def find_recipe_from_api(self, search_by, look_for, number):
         url = "https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/complexSearch"
@@ -74,15 +93,62 @@ class RecipeAPIHandler():
 
         return response.json()
 
-    def extract_information(self, response):
+    @staticmethod
+    def get_recipe_extractor_data(response):
+        recipe_data = []
+
+        # for data in response:
+        recipe_instructions = []
+        # recipe_ingredients = []
+        steps_count = 1
+
+        for instruction in response["recipe"]["recipeInstructions"]:
+            recipe_instructions.append(f"{steps_count}. {instruction['text']}\n")
+            steps_count += 1
+
+        # for ingredient in response["recipeIngredients"]:
+        #     try:
+        #         recipe_ingredients.append(f"{ingredient['quantity']}{ingredient['unit_measure']} {ingredient['label']}")
+        #     except KeyError:
+        #         recipe_ingredients.append(f"{ingredient['quantity']} {ingredient['label']}")
+
+        image = response["recipe"]["image"][0]
+        print(image)
+
+        recipe_info = {
+            "recipe_api_id": None,
+            "title": response["recipe"]["name"],
+            "prep_time": response["recipe"]["prepTimeOriginalFormat"][2:-1],
+            "cook_time": response["recipe"]["cookTimeOriginalFormat"][2:-1],
+            "total_cook_time": response["recipe"]["totalTimeOriginalFormat"][2:-1],
+            "servings": response["recipe"]["recipeYield"],
+            "image_url": image,
+            "favourite": False,
+            "original_recipe": True,
+            "instructions": " ".join(recipe_instructions),
+            "cuisine": response["recipe"]["recipeCuisine"][0] if response["recipe"]["recipeCuisine"] else "",  # recipe['cuisines'],
+            "food_category": " ".join(response["recipe"]["recipeCategory"]),  # same thing as above
+            "vegan": False,  # Diet information is not being provided by this API
+            "vegetarian": False,
+            "gluten_free": False,
+            "dairy_free": False,
+            "ingredients_data": response["recipe"]["recipeIngredients"],
+        }
+
+        recipe_data.append(recipe_info)
+
+        return recipe_data
+
+    @staticmethod
+    def extract_information(response):
         recipes_data = []
 
         for recipe in response:
             recipe_instructions = []
             steps_count = 1
 
-            for instructions in recipe['analyzedInstructions']:
-                if instructions['name'] != "":
+            for instructions in recipe["analyzedInstructions"]:
+                if instructions["name"] != "":
                     recipe_instructions.append(f"{steps_count}. {instructions['name']}\n")
                     steps_count += 1
 
@@ -90,31 +156,31 @@ class RecipeAPIHandler():
                     recipe_instructions.append(f"{steps_count}. {step['step']}\n")
                     steps_count += 1
 
-            image = 'assets/images/img.png'
+            image = "assets/images/img.png"
             try:
-                if recipe['image'] != '':
-                    image = recipe['image']
+                if recipe["image"] != '':
+                    image = recipe["image"]
             except KeyError:
                 pass
 
             recipe_info = {
-                "recipe_api_id": recipe['id'],
-                "title": recipe['title'],
-                "prep_time": recipe['preparationMinutes'],
-                "cook_time": recipe['cookingMinutes'],
-                "total_cook_time": recipe['readyInMinutes'],
-                "servings": recipe['servings'],
+                "recipe_api_id": recipe["id"],
+                "title": recipe["title"],
+                "prep_time": recipe["preparationMinutes"],
+                "cook_time": recipe["cookingMinutes"],
+                "total_cook_time": recipe["readyInMinutes"],
+                "servings": recipe["servings"],
                 "image_url": image,
                 "favourite": False,
                 "original_recipe": False,
                 "instructions": " ".join(recipe_instructions),
-                "cuisine": " ".join(recipe['cuisines']),  # recipe['cuisines'],
-                "food_category": " ".join(recipe['dishTypes']),  # same thing as above
-                "vegan": recipe['vegan'],
-                "vegetarian": recipe['vegetarian'],
-                "gluten_free": recipe['glutenFree'],
-                "dairy_free": recipe['dairyFree'],
-                "ingredients_data": recipe['extendedIngredients'],
+                "cuisine": " ".join(recipe["cuisines"]),  # recipe['cuisines'],
+                "food_category": " ".join(recipe["dishTypes"]),  # same thing as above
+                "vegan": recipe["vegan"],
+                "vegetarian": recipe["vegetarian"],
+                "gluten_free": recipe["glutenFree"],
+                "dairy_free": recipe["dairyFree"],
+                "ingredients_data": recipe["extendedIngredients"],
             }
 
             recipes_data.append(recipe_info)

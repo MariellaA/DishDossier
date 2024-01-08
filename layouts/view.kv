@@ -38,6 +38,29 @@
         text_color: (0.65098, 0.35294, 0, 0.9)
         on_active: self.color_inactive = (0.65098, 0.35294, 0, 0.9)
 
+<DialogContent>
+    name: "recipe_url"
+    id: dialog
+
+    orientation: "vertical"
+    spacing: "12dp"
+    size_hint_y: None
+    height: "80dp"
+
+
+    MDTextField:
+        id: recipe_url
+
+        hint_text: "Add URL here"
+        theme_text_color: "Custom"
+        hint_text_color_normal: (0.9765, 0.9686, 0.8745, 0.6)
+        hint_text_color_focus: (0.9765, 0.9686, 0.8745, 0.6)
+        text_color_focus: (0.9765, 0.9686, 0.8745, 1)
+        text_color_normal: (0.9765, 0.9686, 0.8745, 1)
+        font_name: "fonts/athiti/Athiti-Medium.ttf"
+        line_color_focus: (0.65098, 0.35294, 0, 1)
+        line_color_normal: (0.2392, 0.2196, 0.1725, 1)
+
 
 <ScreenOne>:
     name: 'screen_one'
@@ -962,15 +985,13 @@ BoxLayout:
 
 
                 MDIconButton:
-                    icon: "hamburger-plus"
-                    #valign: "center"
-                    #icon_size: "25sp"
-                    size_hint: None, None
-                    #width: dp(34)
-                    theme_text_color: "Custom"
-                    icon_color: (0.65098, 0.35294, 0, 1)
-                    on_release: app.switch_screen()
+                    id: drop_item
 
+                    icon: "hamburger-plus"
+                    theme_text_color: "Custom"
+                    text_color: (0.65098, 0.35294, 0, 1)
+                    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                    on_release: app.add_menu.open()
 
             ###### Recipe List #######
             MDBoxLayout:

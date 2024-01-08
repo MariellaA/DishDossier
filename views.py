@@ -1,3 +1,5 @@
+from kivy.properties import StringProperty
+from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.card import MDCard
 from kivymd.uix.list import OneLineAvatarIconListItem, MDList
 from kivymd.uix.screen import MDScreen
@@ -5,6 +7,13 @@ from kivymd.uix.screen import MDScreen
 
 class RecipeList(MDList):
     pass
+
+
+class DialogContent(MDBoxLayout):
+    name = StringProperty()
+
+    def __init__(self, **kwargs):
+        super(DialogContent, self).__init__(**kwargs)
 
 
 class RecipeCard(MDCard):

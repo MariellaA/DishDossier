@@ -1,6 +1,7 @@
 import os
 
 from kivy.core.window import Window
+from kivy.metrics import dp
 from kivy.uix.filechooser import FileChooserIconView
 from kivy.uix.popup import Popup
 from kivy.uix.screenmanager import NoTransition
@@ -8,13 +9,16 @@ from kivymd.app import MDApp
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.card import MDCard
 from kivymd.uix.dialog import MDDialog
+from kivymd.uix.label import MDLabel
+from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.screen import MDScreen
+from kivymd.uix.textfield import MDTextField
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from kivy.config import Config
 from kivy.lang import Builder
 
-from views import RecipeCard, FilterItem
+from views import RecipeCard, FilterItem, DialogContent
 
 Config.set('graphics', 'resizable', False)
 Config.set('kivy', 'window_icon', 'images/start_logo.png')
@@ -30,6 +34,8 @@ class DishDossierApp(MDApp):
 
         self.current_recipe = None
         self.search_menu = None
+        self.add_menu = None
+        self.url_window = None
         self.potentially_search_api = False
         self.search_selection = []
 
@@ -56,6 +62,37 @@ class DishDossierApp(MDApp):
         self.theme_cls.theme_style_switch_animation_duration = 0.8
 
         return Builder.load_file('layouts/view.kv')
+
+    def on_start(self):
+        items = [
+            {"icon": "pencil-plus-outline",
+             "viewclass": "MDRectangleFlatIconButton",
+             "text": "Manually",
+             "on_release": lambda: (self.switch_screen(), self.add_menu.dismiss()),
+             "line_color": (0, 0, 0, 0),
+             "theme_text_color": "Custom",
+             "text_color": (0.9765, 0.9686, 0.8745, 1),
+             "icon_color": (0.65098, 0.35294, 0, 1)
+             },
+            {"icon": "link-variant-plus",
+             "viewclass": "MDRectangleFlatIconButton",
+             "text": "Use URL",
+             "on_release": lambda: (self.show_url_window(), self.add_menu.dismiss()),
+             "line_color": (0, 0, 0, 0),
+             "theme_text_color": "Custom",
+             "icon_color": (0.65098, 0.35294, 0, 1),
+             "text_color": (0.9765, 0.9686, 0.8745, 1),
+             },
+        ]
+
+        self.add_menu = MDDropdownMenu(
+            caller=self.root.ids.drop_item,
+            items=items,
+            width_mult=2,
+            background_color=(0.2392, 0.2196, 0.1725, 1),
+            size_hint=(None, None),
+            max_height=dp(75),
+        )
 
     def load_random_recipe(self, recipe_count):
         recipes_data = self.api_handler.load_random_recipes_from_api(recipe_count)
@@ -86,7 +123,7 @@ class DishDossierApp(MDApp):
         else:
             # Display the recipes (customize this part based on your UI)
             for recipe in recipes:
-                recipe_card = RecipeCard(id=str(recipe.recipe_api_id), )
+                recipe_card = RecipeCard(id=str(recipe.recipe_api_id),)
 
                 recipe_card.ids.recipe_img.source = recipe.image_url
                 recipe_card.ids.recipe_title_btn.text = recipe.title
@@ -344,6 +381,61 @@ class DishDossierApp(MDApp):
         else:
             self.root.ids.screen_two.switch_screen()
 
+    def get_recipe_through_url(self, instance):
+        print(self.url_window.content_cls.ids.recipe_url.text)
+        url = self.url_window.content_cls.ids.recipe_url.text
+        recipe = None
+        recipes = []
+
+        if url != "":
+            print("EXTRACT")
+            extracted_data = self.api_handler.extract_recipe_from_website(url)
+            print("extr data")
+            print(extracted_data)
+
+            for rec in extracted_data:
+                print("add")
+                recipe = self.db.add_recipe(**rec)
+                print(rec)
+                print("get thr url")
+
+                if recipe:
+                    print(recipe.title)
+                    recipes.append(recipe)
+
+            self.load_recipe_list_with_recipes(recipes)
+            self.url_window.content_cls.ids.recipe_url.text = ""
+            self.url_window.dismiss()
+        else:
+            return
+
+    # Create the popup menu for recipe url input
+    def show_url_window(self):
+        if not self.url_window:
+            self.url_window = MDDialog(
+                title="Add recipe URL",
+                type="custom",
+                content_cls=DialogContent(),
+                buttons=[
+                    MDFlatButton(
+                        text="CANCEL",
+                        theme_text_color="Custom",
+                        text_color=(0.65098, 0.35294, 0, 1),
+                        on_release=lambda instance: self.close_url_window(instance),
+                    ),
+                    MDRaisedButton(
+                        text="OK",
+                        theme_text_color="Custom",
+                        md_bg_color=(0.65098, 0.35294, 0, 1),
+                        text_color=(0.9765, 0.9686, 0.8745, 1),
+                        on_release=lambda instance: self.get_recipe_through_url(instance),
+                    ), ],
+                md_bg_color=(0.2392, 0.2196, 0.1725, 0.6),
+            )
+
+        self.url_window.open()
+
+    # Create the filter menu
     def show_search_by_options(self):
         if not self.search_menu:
             self.search_menu = MDDialog(
@@ -398,7 +490,7 @@ class DishDossierApp(MDApp):
             # Touch is outside the dialog, close the dialog
             self.close_search_by_menu(instance)
 
-    # Closes the dialog without saving the changes
+    # Closes the filter popup menu without saving the changes
     def close_search_by_menu(self, instance):
 
         for i in range(len(self.search_menu.items)):
@@ -411,6 +503,11 @@ class DishDossierApp(MDApp):
                 self.search_menu.items[i].ids.check.active = self.search_selection[i][2]
 
         self.search_menu.dismiss()
+
+    # Closes the url popup menu without saving the changes
+    def close_url_window(self, instance):
+        self.url_window.content_cls.ids.recipe_url.text = ""
+        self.url_window.dismiss()
 
     # Closes the dialog and saves the changes
     def ok_search_by_menu(self, instance):

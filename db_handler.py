@@ -22,8 +22,18 @@ class DBHandler:
                    servings, image_url, favourite, original_recipe, instructions, cuisine,
                    food_category, vegan, vegetarian, gluten_free, dairy_free, ingredients_data):
         # try:
+        print(recipe_api_id)
         existing_recipe = self.get_recipe(
                 recipe_api_id)
+
+        #existing_original_recipe = self.get_original_recipe(title)
+
+        print(title)
+        try:
+            print(existing_recipe.title)
+            # print(existing_original_recipe.title)
+        except AttributeError:
+            pass
 
         if not existing_recipe or original_recipe:
             # Create a Recipe object
