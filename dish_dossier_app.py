@@ -2,7 +2,9 @@ import os
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from pprint import pprint
 
+import sib_api_v3_sdk
 from kivy.core.window import Window
 from kivy.metrics import dp
 from kivy.uix.filechooser import FileChooserIconView
@@ -20,6 +22,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from kivy.config import Config
 from kivy.lang import Builder
+from sib_api_v3_sdk.rest import ApiException
 
 from views import RecipeCard, FilterItem, DialogContent
 
@@ -129,32 +132,16 @@ class DishDossierApp(MDApp):
             max_height=dp(75),
         )
 
-    def send_recipe_email(self):
-        print('Email sent successfully!')
-
     def write_an_email(self, instance):
-        recipe_info = self.root.ids.screen_one.export_recipe_data()
-
-        recipe_title = recipe_info['title']
-        recipe_content = [f"Servings: {recipe_info['servings']}",
-                          f"Prep: {recipe_info['prep']}\n",
-                          f"Cook: {recipe_info['servings']}\n",
-                          f"Total: {recipe_info['total_cook_time']}\n",
-                          f"Ingredients: {', '.join(recipe_info['ingredients'])}\n",
-                          f"Instructions:\n"]
-
-        for instr in recipe_info["instructions"]:
-            recipe_content.append(instr)
-
-        recipient_email = self.export_window.content_cls.ids.window_input.text
-
-        self.send_recipe_email()
-        # self.send_recipe_email(recipe_title, recipe_content, recipient_email)
+        print("Email sent!")
+        print(self.export_window.content_cls.ids.window_input.text)
         self.export_window.content_cls.ids.window_input.text = ""
         self.export_window.dismiss()
 
     def load_random_recipe(self, recipe_count):
         recipes_data = self.api_handler.load_random_recipes_from_api(recipe_count)
+        recipe_info = self.extract_information(recipes_data)
+
         recipes = []
 
         for recipe_info in recipes_data:
@@ -166,9 +153,11 @@ class DishDossierApp(MDApp):
 
     def load_found_recipe(self, search_by, look_for, recipe_count):
         found_recipes = self.api_handler.find_recipe_from_api(search_by, look_for, recipe_count)
+        recipe_info = self.extract_information(found_recipes)
+
         recipes = []
 
-        for recipe_info in found_recipes:
+        for recipe_info in recipe_info:
             recipe_exists = self.db.add_recipe(**recipe_info)
 
             if recipe_exists:
@@ -182,7 +171,7 @@ class DishDossierApp(MDApp):
         else:
             # Display the recipes (customize this part based on your UI)
             for recipe in recipes:
-                recipe_card = RecipeCard(id=str(recipe.recipe_api_id),)
+                recipe_card = RecipeCard(id=str(recipe.recipe_api_id), )
 
                 recipe_card.ids.recipe_img.source = recipe.image_url
                 recipe_card.ids.recipe_title_btn.text = recipe.title
@@ -212,14 +201,18 @@ class DishDossierApp(MDApp):
 
         self.root.ids.screen_one.set_recipe_info(recipe)
 
+    def reset_search_values(self):
+        self.root.ids.recipe_list.clear_widgets()
+        self.offset = 0
+        self.potentially_search_api = False
+        self.root.ids.search_text.text = ""
+        self.search_selection = []
+        self.root.ids.recipe_scroll.scroll_y = 1
+        self.show_more_btn_on_scroll(self.root.ids.recipe_scroll.scroll_y)
+
     def on_recipe_list_select(self, list):
         if self.selected_recipe_list != list:
-            self.root.ids.recipe_list.clear_widgets()
-            self.offset = 0
-            self.potentially_search_api = False
-            self.root.ids.search_text.text = ""
-            self.root.ids.recipe_scroll.scroll_y = 1
-            self.show_more_btn_on_scroll(self.root.ids.recipe_scroll.scroll_y)
+            self.reset_search_values()
 
         if list == "all_recipes":
 
@@ -228,13 +221,13 @@ class DishDossierApp(MDApp):
             search_criteria = self.get_search_criteria()
 
             if self.root.ids.search_text.text != "" or search_criteria != ["title"]:
-                print("SEARCH API ON_RECIPE_LIST_SELECT")
+                # print("SEARCH API ON_RECIPE_LIST_SELECT")
                 recipes = self.search_filtered_recipes_from_db(self.get_search_criteria(),
                                                                self.root.ids.search_text.text,
                                                                False, True, False)
                 print(recipes)
                 if not recipes:
-                    print("NO RECIPES IN DB ON_RECIPE_LIST_SELECT")
+                    # print("NO RECIPES IN DB ON_RECIPE_LIST_SELECT")
                     found_recipes = self.search_filtered_recipes_from_api(self.get_search_criteria(),
                                                                           self.root.ids.search_text.text, 3)
 
@@ -262,11 +255,110 @@ class DishDossierApp(MDApp):
             if self.current_recipe.original_recipe:
                 self.root.ids.screen_one.switch_on_delete_edit_btn(True)
 
+            try:
+                self.on_recipe_select(self.root.ids.recipe_list.children[-1])
+            except IndexError:
+                pass
+
         elif list == "favourites":
             self.load_recipe_list_with_recipes(self.db.get_all_favourite_recipes(self.offset, self.page_size))
             self.root.ids.screen_one.switch_on_delete_edit_btn(False)
 
+            try:
+                self.on_recipe_select(self.root.ids.recipe_list.children[-1])
+            except IndexError:
+                pass
+
         self.selected_recipe_list = list
+
+    @staticmethod
+    def get_recipe_extractor_data(response):
+        recipe_data = []
+
+        # for data in response:
+        recipe_instructions = []
+        # recipe_ingredients = []
+        steps_count = 1
+
+        for instruction in response["recipe"]["recipeInstructions"]:
+            recipe_instructions.append(f"{steps_count}. {instruction['text']}\n")
+            steps_count += 1
+
+        image = response["recipe"]["image"][0]
+        # print(image)
+
+        recipe_info = {
+            "recipe_api_id": None,
+            "title": response["recipe"]["name"],
+            "prep_time": response["recipe"]["prepTimeOriginalFormat"][2:-1],
+            "cook_time": response["recipe"]["cookTimeOriginalFormat"][2:-1],
+            "total_cook_time": response["recipe"]["totalTimeOriginalFormat"][2:-1],
+            "servings": response["recipe"]["recipeYield"],
+            "image_url": image,
+            "favourite": False,
+            "original_recipe": True,
+            "instructions": " ".join(recipe_instructions),
+            "cuisine": response["recipe"]["recipeCuisine"][0] if response["recipe"]["recipeCuisine"] else "",
+            # recipe['cuisines'],
+            "food_category": " ".join(response["recipe"]["recipeCategory"]),  # same thing as above
+            "vegan": False,  # Diet information is not being provided by this API
+            "vegetarian": False,
+            "gluten_free": False,
+            "dairy_free": False,
+            "ingredients_data": response["recipe"]["recipeIngredients"],
+        }
+
+        recipe_data.append(recipe_info)
+
+        return recipe_data
+
+    @staticmethod
+    def extract_information(response):
+        recipes_data = []
+
+        for recipe in response:
+            recipe_instructions = []
+            steps_count = 1
+
+            for instructions in recipe["analyzedInstructions"]:
+                if instructions["name"] != "":
+                    recipe_instructions.append(f"{steps_count}. {instructions['name']}\n")
+                    steps_count += 1
+
+                for step in instructions["steps"]:
+                    recipe_instructions.append(f"{steps_count}. {step['step']}\n")
+                    steps_count += 1
+
+            image = "assets/images/img.png"
+            try:
+                if recipe["image"] != '':
+                    image = recipe["image"]
+            except KeyError:
+                pass
+
+            recipe_info = {
+                "recipe_api_id": recipe["id"],
+                "title": recipe["title"],
+                "prep_time": recipe["preparationMinutes"],
+                "cook_time": recipe["cookingMinutes"],
+                "total_cook_time": recipe["readyInMinutes"],
+                "servings": recipe["servings"],
+                "image_url": image,
+                "favourite": False,
+                "original_recipe": False,
+                "instructions": " ".join(recipe_instructions),
+                "cuisine": " ".join(recipe["cuisines"]),  # recipe['cuisines'],
+                "food_category": " ".join(recipe["dishTypes"]),  # same thing as above
+                "vegan": recipe["vegan"],
+                "vegetarian": recipe["vegetarian"],
+                "gluten_free": recipe["glutenFree"],
+                "dairy_free": recipe["dairyFree"],
+                "ingredients_data": recipe["extendedIngredients"],
+            }
+
+            recipes_data.append(recipe_info)
+
+        return recipes_data
 
     def search_filtered_recipes_from_api(self, search_by, look_for, recipe_count):
         found_recipes = self.load_found_recipe(search_by, look_for, recipe_count)
@@ -448,17 +540,16 @@ class DishDossierApp(MDApp):
         recipes = []
 
         if url != "":
-            print("EXTRACT")
-            extracted_data = self.api_handler.extract_recipe_from_website(url)
-            print("extr data")
-            print(extracted_data)
+            # print("EXTRACT")
+            extracted_recipe = self.api_handler.extract_recipe_from_website(url)
+            # print(extracted_recipe)
+            extracted_recipe_data = self.get_recipe_extractor_data(extracted_recipe)
+            print(extracted_recipe_data)
 
-            for rec in extracted_data:
-                print("add")
+            for rec in extracted_recipe_data:
                 recipe = self.db.add_recipe(**rec)
 
                 if recipe:
-                    # print(recipe.title)
                     recipes.append(recipe)
 
             self.load_recipe_list_with_recipes(recipes)
@@ -497,7 +588,7 @@ class DishDossierApp(MDApp):
     def show_email_input_window(self):
         if not self.export_window:
             self.export_window = MDDialog(
-                title="Provide recipient's email address",
+                title="Provide recipient email address",
                 type="custom",
                 content_cls=DialogContent(),
                 buttons=[

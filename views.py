@@ -9,16 +9,16 @@ class RecipeList(MDList):
     pass
 
 
+class RecipeCard(MDCard):
+    def __init__(self, **kwargs):
+        super(RecipeCard, self).__init__(**kwargs)
+
+
 class DialogContent(MDBoxLayout):
     name = StringProperty()
 
     def __init__(self, **kwargs):
         super(DialogContent, self).__init__(**kwargs)
-
-
-class RecipeCard(MDCard):
-    def __init__(self, **kwargs):
-        super(RecipeCard, self).__init__(**kwargs)
 
 
 class ScreenOne(MDScreen):
